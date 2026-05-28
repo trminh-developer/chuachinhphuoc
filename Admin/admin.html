@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Chùa Chính Phước</title>
+    <link rel="stylesheet" href="../styles/admin.css">
+</head>
+<body>
+    <!-- Login Section -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>🙏 Admin</h1>
+                <p>Chùa Chính Phước</p>
+            </div>
+            <div id="loginMessage" class="message"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn-login">Đăng Nhập</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div class="admin-dashboard" id="adminDashboard">
+        <div class="dashboard-header">
+            <h1>Bảng Quản Lý</h1>
+            <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Sidebar Navigation -->
+            <div class="sidebar">
+                <div class="nav-item active" onclick="switchTab('events')">📅 Quản Lý Hoạt Động</div>
+                <div class="nav-item" onclick="switchTab('gallery')">🖼️ Quản Lý Hình Ảnh</div>
+                <div class="nav-item" onclick="switchTab('audio')">🎵 Quản Lý Âm Thanh</div>
+                <div class="nav-item" onclick="switchTab('contacts')">💬 Xem Liên Hệ</div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Events Section -->
+                <div id="events" class="section active">
+                    <div class="form-section">
+                        <h2>Thêm Hoạt Động Mới</h2>
+                        <form id="eventForm">
+                            <div class="form-group">
+                                <label for="eventDate">Ngày (DD/MM)</label>
+                                <input type="text" id="eventDate" placeholder="01/01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventTitle">Tiêu Đề</label>
+                                <input type="text" id="eventTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventCategory">Danh Mục</label>
+                                <input type="text" id="eventCategory" placeholder="Lễ hội, Tu tập, Giảng dạy..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventDescription">Mô Tả</label>
+                                <textarea id="eventDescription" required></textarea>
+                            </div>
+                            <button type="submit" class="btn-submit">Thêm Hoạt Động</button>
+                        </form>
+                    </div>
+                    <div id="eventsList" class="items-list" style="margin-top: 30px;"></div>
+                </div>
+
+                <!-- Gallery Section -->
+                <div id="gallery" class="section">
+                    <div class="form-section">
+                        <h2>Thêm Hình Ảnh Mới</h2>
+                        <form id="galleryForm">
+                            <div class="form-group">
+                                <label for="imageUrl">URL Hình Ảnh</label>
+                                <input type="text" id="imageUrl" placeholder="https://..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="imageLabel">Tiêu Đề Hình Ảnh</label>
+                                <input type="text" id="imageLabel" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="imageOrder">Thứ Tự (tùy chọn)</label>
+                                <input type="number" id="imageOrder" value="0">
+                            </div>
+                            <button type="submit" class="btn-submit">Thêm Hình Ảnh</button>
+                        </form>
+                    </div>
+                    <div id="galleryList" class="items-list" style="margin-top: 30px;"></div>
+                </div>
+
+                <!-- Audio Section -->
+                <div id="audio" class="section">
+                    <div class="form-section">
+                        <h2>Thêm Âm Thanh Mới</h2>
+                        <form id="audioForm">
+                            <div class="form-group">
+                                <label for="audioUrl">URL Tệp Âm Thanh (MP3)</label>
+                                <input type="text" id="audioUrl" placeholder="https://..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="audioTitle">Tiêu Đề</label>
+                                <input type="text" id="audioTitle" placeholder="Tên bài tụng kinh..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="audioDescription">Mô Tả</label>
+                                <textarea id="audioDescription" placeholder="Mô tả bài tụng kinh, ca đảo..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-submit">Thêm Âm Thanh</button>
+                        </form>
+                    </div>
+                    <div id="audioList" class="items-list" style="margin-top: 30px;"></div>
+                </div>
+
+                <!-- Contacts Section -->
+                <div id="contacts" class="section">
+                    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+                        <h2 style="color: #2C3E30; margin-bottom: 20px;">Danh Sách Liên Hệ</h2>
+                        <div id="contactsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/admin.js"></script>
+</body>
+</html>
