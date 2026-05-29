@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001/api';
+const API_URL = '/api';
         let token = localStorage.getItem('adminToken');
         let audios = [];
 
@@ -20,6 +20,10 @@ const API_URL = 'http://localhost:3001/api';
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`Server bảo trì hoặc phản hồi lỗi mã lỗi: ${response.status}`);
+                }
 
                 const data = await response.json();
 

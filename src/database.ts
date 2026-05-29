@@ -1,271 +1,168 @@
-import { dbPool } from './server';
-import mysql from 'mysql2/promise';
+import sql from 'mssql';
 
-interface Event {
-    id: number;
-    date: string;
-    title: string;
-    description: string;
-    category: string;
-    created_at: string;
+const sqlConfig: sql.config = {
+    server: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'sa',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'chuachinhphuoc',
+    options: {
+        trustServerCertificate: true,
+        encrypt: true,
+        connectTimeout: 15000,
+    }
+};
+
+let pool: sql.ConnectionPool;
+
+export async function getPool(): Promise<sql.ConnectionPool> {
+    if (!pool) {
+        pool = new sql.ConnectionPool(sqlConfig);
+        await pool.connect();
+    }
+    return pool;
 }
 
-interface GalleryItem {
-    id: number;
-    image_url: string;
-    label: string;
-    order: number;
-}
-
-interface Admin {
-    id: number;
-    username: string;
-    email: string;
-    password_hash: string;
-    created_at: string;
-}
-
-// Initialize database tables
-export async function initializeDatabase() {
-    const connection = await dbPool.getConnection();
-
+export async function getEvents() {
     try {
-        // Create events table
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS events (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                date VARCHAR(10) NOT NULL,
-                title VARCHAR(255) NOT NULL,
-                description TEXT NOT NULL,
-                category VARCHAR(50) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_date (date)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-
-        // Create gallery table
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS gallery (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                image_url VARCHAR(500) NOT NULL,
-                label VARCHAR(255) NOT NULL,
-                \`order\` INT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_order (\`order\`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-
-        // Create contacts table for newsletter/inquiries
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS contacts (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                phone VARCHAR(20),
-                message TEXT,
-                type ENUM('inquiry', 'donation', 'newsletter') DEFAULT 'inquiry',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_email (email)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-
-        // Create admin table
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS admins (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(255) NOT NULL UNIQUE,
-                email VARCHAR(255) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_username (username),
-                INDEX idx_email (email)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-
-        console.log('✓ Database tables initialized successfully');
+        const p = await getPool();
+        const result = await p.request().query('SELECT * FROM events ORDER BY date DESC');
+        return result.recordset;
     } catch (error) {
-        console.error('Error initializing database:', error);
+        console.error('Error fetching events:', error);
         throw error;
-    } finally {
-        connection.release();
     }
 }
 
-// Get all events
-export async function getEvents(): Promise<Event[]> {
-    const connection = await dbPool.getConnection();
-
+export async function addEvent(date: string, title: string, description: string, category: string) {
     try {
-        const [rows] = await connection.execute(`
-            SELECT * FROM events
-            ORDER BY STR_TO_DATE(date, '%d/%m') ASC
-        `);
-        return rows as Event[];
-    } finally {
-        connection.release();
+        const p = await getPool();
+        const result = await p.request()
+            .input('date', sql.VarChar(10), date)
+            .input('title', sql.VarChar(255), title)
+            .input('description', sql.Text, description)
+            .input('category', sql.VarChar(50), category)
+            .query(`
+                INSERT INTO events (date, title, description, category)
+                VALUES (@date, @title, @description, @category);
+                SELECT SCOPE_IDENTITY() as id
+            `);
+        return result.recordset[0].id;
+    } catch (error) {
+        console.error('Error adding event:', error);
+        throw error;
     }
 }
 
-// Add new event
-export async function addEvent(
-    date: string,
-    title: string,
-    description: string,
-    category: string
-): Promise<number> {
-    const connection = await dbPool.getConnection();
-
+export async function getGalleryItems() {
     try {
-        const [result] = await connection.execute(
-            `INSERT INTO events (date, title, description, category)
-             VALUES (?, ?, ?, ?)`,
-            [date, title, description, category]
-        );
-        const insertResult = result as any;
-        return insertResult.insertId;
-    } finally {
-        connection.release();
+        const p = await getPool();
+        const result = await p.request().query('SELECT * FROM gallery ORDER BY [order] ASC');
+        return result.recordset;
+    } catch (error) {
+        console.error('Error fetching gallery:', error);
+        throw error;
     }
 }
 
-// Get gallery items
-export async function getGalleryItems(): Promise<GalleryItem[]> {
-    const connection = await dbPool.getConnection();
-
+export async function addGalleryItem(image_url: string, label: string, order: number) {
     try {
-        const [rows] = await connection.execute(`
-            SELECT * FROM gallery
-            ORDER BY \`order\` ASC
-        `);
-        return rows as GalleryItem[];
-    } finally {
-        connection.release();
+        const p = await getPool();
+        const result = await p.request()
+            .input('image_url', sql.VarChar(500), image_url)
+            .input('label', sql.VarChar(255), label)
+            .input('order', sql.Int, order)
+            .query(`
+                INSERT INTO gallery (image_url, label, [order])
+                VALUES (@image_url, @label, @order);
+                SELECT SCOPE_IDENTITY() as id
+            `);
+        return result.recordset[0].id;
+    } catch (error) {
+        console.error('Error adding gallery item:', error);
+        throw error;
     }
 }
 
-// Add gallery item
-export async function addGalleryItem(
-    imageUrl: string,
-    label: string,
-    order: number = 0
-): Promise<number> {
-    const connection = await dbPool.getConnection();
-
+export async function saveContact(name: string, email: string, phone: string | null, message: string, type: string) {
     try {
-        const [result] = await connection.execute(
-            `INSERT INTO gallery (image_url, label, \`order\`)
-             VALUES (?, ?, ?)`,
-            [imageUrl, label, order]
-        );
-        const insertResult = result as any;
-        return insertResult.insertId;
-    } finally {
-        connection.release();
+        const p = await getPool();
+        const result = await p.request()
+            .input('name', sql.VarChar(255), name)
+            .input('email', sql.VarChar(255), email)
+            .input('phone', sql.VarChar(20), phone || null)
+            .input('message', sql.Text, message)
+            .input('type', sql.VarChar(50), type)
+            .query(`
+                INSERT INTO contacts (name, email, phone, message, type)
+                VALUES (@name, @email, @phone, @message, @type);
+                SELECT SCOPE_IDENTITY() as id
+            `);
+        return result.recordset[0].id;
+    } catch (error) {
+        console.error('Error saving contact:', error);
+        throw error;
     }
 }
 
-// Save contact inquiry
-export async function saveContact(
-    name: string,
-    email: string,
-    phone: string | null,
-    message: string,
-    type: 'inquiry' | 'donation' | 'newsletter' = 'inquiry'
-): Promise<number> {
-    const connection = await dbPool.getConnection();
-
+export async function createAdmin(username: string, email: string, password_hash: string) {
     try {
-        const [result] = await connection.execute(
-            `INSERT INTO contacts (name, email, phone, message, type)
-             VALUES (?, ?, ?, ?, ?)`,
-            [name, email, phone, message, type]
-        );
-        const insertResult = result as any;
-        return insertResult.insertId;
-    } finally {
-        connection.release();
+        const p = await getPool();
+        const result = await p.request()
+            .input('username', sql.VarChar(255), username)
+            .input('email', sql.VarChar(255), email)
+            .input('password_hash', sql.VarChar(255), password_hash)
+            .query(`
+                INSERT INTO Admin (users, email, passwords)
+                VALUES (@username, @email, @password_hash);
+                SELECT SCOPE_IDENTITY() as id
+            `);
+        return result.recordset[0].id;
+    } catch (error) {
+        console.error('Error creating admin:', error);
+        throw error;
     }
 }
 
-// Get all contacts
-export async function getContacts() {
-    const connection = await dbPool.getConnection();
-
+export async function getAdminByUsername(username: string) {
     try {
-        const [rows] = await connection.execute(`
-            SELECT * FROM contacts
-            ORDER BY created_at DESC
-        `);
-        return rows;
-    } finally {
-        connection.release();
+        const p = await getPool();
+        const result = await p.request()
+            .input('username', sql.VarChar(100), username)
+            .query(`SELECT * FROM Admin WHERE users = @username`);
+
+        if (result.recordset.length === 0) return null;
+
+        const admin = result.recordset[0];
+        return {
+            id: admin.id || 1,
+            username: admin.users,
+            email: admin.email,
+            password_hash: admin.passwords
+        };
+    } catch (error) {
+        console.error('Error fetching admin:', error);
+        throw error;
     }
 }
 
-// Admin functions
-export async function createAdmin(
-    username: string,
-    email: string,
-    passwordHash: string
-): Promise<number> {
-    const connection = await dbPool.getConnection();
-
+export async function getAdminById(id: number) {
     try {
-        const [result] = await connection.execute(
-            `INSERT INTO admins (username, email, password_hash)
-             VALUES (?, ?, ?)`,
-            [username, email, passwordHash]
-        );
-        const insertResult = result as any;
-        return insertResult.insertId;
-    } finally {
-        connection.release();
-    }
-}
+        const p = await getPool();
+        const result = await p.request()
+            .input('id', sql.Int, id)
+            .query(`SELECT TOP 1 * FROM Admin WHERE id = @id`);
 
-export async function getAdminByUsername(username: string): Promise<Admin | null> {
-    const connection = await dbPool.getConnection();
+        if (result.recordset.length === 0) return null;
 
-    try {
-        const [rows] = await connection.execute(
-            `SELECT * FROM admins WHERE username = ?`,
-            [username]
-        );
-        const result = rows as Admin[];
-        return result.length > 0 ? result[0] : null;
-    } finally {
-        connection.release();
-    }
-}
-
-export async function getAdminByEmail(email: string): Promise<Admin | null> {
-    const connection = await dbPool.getConnection();
-
-    try {
-        const [rows] = await connection.execute(
-            `SELECT * FROM admins WHERE email = ?`,
-            [email]
-        );
-        const result = rows as Admin[];
-        return result.length > 0 ? result[0] : null;
-    } finally {
-        connection.release();
-    }
-}
-
-export async function getAdminById(id: number): Promise<Admin | null> {
-    const connection = await dbPool.getConnection();
-
-    try {
-        const [rows] = await connection.execute(
-            `SELECT * FROM admins WHERE id = ?`,
-            [id]
-        );
-        const result = rows as Admin[];
-        return result.length > 0 ? result[0] : null;
-    } finally {
-        connection.release();
+        const admin = result.recordset[0];
+        return {
+            id: admin.id || 1,
+            username: admin.users,
+            email: admin.email,
+            password_hash: admin.passwords
+        };
+    } catch (error) {
+        console.error('Error fetching admin:', error);
+        throw error;
     }
 }
