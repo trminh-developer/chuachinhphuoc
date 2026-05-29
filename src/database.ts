@@ -107,16 +107,15 @@ export async function saveContact(name: string, email: string, phone: string | n
 export async function createAdmin(username: string, email: string, password_hash: string) {
     try {
         const p = await getPool();
-        const result = await p.request()
-            .input('username', sql.VarChar(255), username)
-            .input('email', sql.VarChar(255), email)
-            .input('password_hash', sql.VarChar(255), password_hash)
+        await p.request()
+            .input('username', sql.VarChar(100), username)
+            .input('email', sql.VarChar(100), email)
+            .input('password_hash', sql.VarChar(500), password_hash)
             .query(`
                 INSERT INTO Admin (users, email, passwords)
-                VALUES (@username, @email, @password_hash);
-                SELECT SCOPE_IDENTITY() as id
+                VALUES (@username, @email, @password_hash)
             `);
-        return result.recordset[0].id;
+        return username;
     } catch (error) {
         console.error('Error creating admin:', error);
         throw error;
@@ -134,7 +133,7 @@ export async function getAdminByUsername(username: string) {
 
         const admin = result.recordset[0];
         return {
-            id: admin.id || 1,
+            id: admin.users,
             username: admin.users,
             email: admin.email,
             password_hash: admin.passwords
@@ -149,14 +148,14 @@ export async function getAdminById(id: number) {
     try {
         const p = await getPool();
         const result = await p.request()
-            .input('id', sql.Int, id)
-            .query(`SELECT TOP 1 * FROM Admin WHERE id = @id`);
+            .input('id', sql.VarChar(100), id.toString())
+            .query(`SELECT TOP 1 * FROM Admin WHERE users = @id`);
 
         if (result.recordset.length === 0) return null;
 
         const admin = result.recordset[0];
         return {
-            id: admin.id || 1,
+            id: admin.users,
             username: admin.users,
             email: admin.email,
             password_hash: admin.passwords
