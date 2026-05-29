@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "create-admin": "ts-node create-admin.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

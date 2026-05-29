@@ -3,6 +3,7 @@ import cors from 'cors';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/api';
+import path from 'path';
 
 dotenv.config();
 
@@ -93,12 +94,13 @@ app.use('/api', apiRoutes);
 
 // Root route
 app.get('/', (req: Request, res: Response) => {
-    res.sendFile('index.html', { root: '.' });
+    // Sử dụng path.join và __dirname để trỏ chính xác ra thư mục chứa index.html
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 // Admin route
 app.get('/admin', (req: Request, res: Response) => {
-    res.sendFile('admin.html', { root: '.' });
+    res.sendFile(path.join(__dirname, '../Admin/admin.html'));
 });
 
 // Error handling middleware

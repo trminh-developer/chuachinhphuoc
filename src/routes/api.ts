@@ -20,6 +20,25 @@ router.post('/auth/register', async (req: Request, res: Response) => {
             });
         }
 
+        // Email validation regex
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid email format'
+            });
+        }
+
+        // Optional: Chỉ cho phép email từ các domain cụ thể
+        // Uncomment để chỉ chấp nhận email từ những domain nhất định
+        const allowedDomains = ['gmail.com']; // ← Sửa domain ở đây
+        if (!allowedDomains.some(domain => email.endsWith('@' + domain))) {
+            return res.status(400).json({
+                success: false,
+                error: `Only emails from ${allowedDomains.map(d => '@' + d).join(', ')} are allowed`
+            });
+        }
+
         // Check if admin already exists
         const existingAdmin = await getAdminByUsername(username);
         if (existingAdmin) {
