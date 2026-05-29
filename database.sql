@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS contacts (
 
 -- Insert Sample Events
 INSERT INTO events (date, title, description, category) VALUES
-('15/08', 'Lễ Vu Lan', 'Tưởng nhớ những Phật tử đã từng mở chia, truyền kinh pháp cho chúng ta.', 'Lễ hội'),
+('15/07', 'Lễ Vu Lan', 'Tưởng nhớ những Phật tử đã từng mở chia, truyền kinh pháp cho chúng ta.', 'Lễ hội'),
 ('01/01', 'Tết Nguyên Đán', 'Kỷ niệm năm mới với các buổi tụng kinh và bài giảng Phật pháp đầu năm.', 'Tết'),
-('08/04', 'Lễ Phật Đản', 'Kỷ niệm ngày Đức Phật Thích Ca Mâu Ni ra đời - ngày thiêng liêng của Phật giáo.', 'Lễ hội'),
+('15/04', 'Lễ Phật Đản', 'Kỷ niệm ngày Đức Phật Thích Ca Mâu Ni ra đời - ngày thiêng liêng của Phật giáo.', 'Lễ hội'),
 ('15/10', 'Thiền định chiều', 'Buổi thiền định lâu dài từ chiều đến tối, giúp tu tập sâu sắc hơn.', 'Tu tập'),
 ('28/03', 'Giảng kinh Pháp Hoa', 'Giáo sư giảng giải kinh Pháp Hoa - một trong những kinh điển quan trọng nhất của Phật giáo.', 'Giảng dạy'),
 ('09/06', 'Lễ Tam Bảo', 'Cúng dường Tam Bảo (Phật, Pháp, Tăng) trong không khí trang nghiêm và trang trọng.', 'Lễ tụng');
