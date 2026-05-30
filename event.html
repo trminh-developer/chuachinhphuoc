@@ -161,12 +161,19 @@
             }
         }
 
+        function normalizeImageUrl(url) {
+            if (!url) return '/logo.jpg';
+            const trimmed = url.trim();
+            if (!trimmed.startsWith('http')) return '/logo.jpg';
+            return escapeHtml(trimmed);
+        }
+
         function renderEvent(event) {
             const wrapper = document.getElementById('event-content-wrapper');
             
             // Nếu không có ảnh, dùng ảnh mặc định phong cảnh chùa
             const defaultImage = 'https://images.unsplash.com/photo-1548625361-ec85303c7348?q=80&w=2070&auto=format&fit=crop';
-            const bgImage = event.image_url ? escapeHtml(event.image_url) : defaultImage;
+            const bgImage = event.image_url ? normalizeImageUrl(event.image_url) : defaultImage;
 
             document.title = `${event.title} - Chùa Chính Phước`;
 

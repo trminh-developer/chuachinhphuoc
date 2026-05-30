@@ -19,6 +19,15 @@ if ('serviceWorker' in navigator) {
 // =============================================================================
 // XSS Protection
 // =============================================================================
+function normalizeImageUrl(url) {
+    if (!url) return '/logo.jpg';
+    const trimmed = url.trim();
+    if (!trimmed.startsWith('http')) {
+        return '/logo.jpg';
+    }
+    return escapeHtml(trimmed);
+}
+
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     const str = String(text);
@@ -334,7 +343,7 @@ async function loadEvents() {
             }
             return `
             <div class="item-card">
-                ${event.image_url ? `<img class="img-preview" src="${escapeHtml(event.image_url)}" alt="${escapeHtml(event.title)}" onerror="this.onerror=null; this.src='https://via.placeholder.com/300?text=L%E1%BB%97i+%E1%BA%A3nh'">` : ''}
+                ${event.image_url ? `<img class="img-preview" src="${normalizeImageUrl(event.image_url)}" alt="${escapeHtml(event.title)}" onerror="this.onerror=null; this.src='/logo.jpg';">` : ''}
                 <span class="item-badge">${escapeHtml(event.category)}</span>
                 <div class="item-title">${escapeHtml(event.title)}</div>
                 <div class="item-desc">
@@ -525,9 +534,9 @@ async function loadGallery() {
 
         list.innerHTML = data.data.map(item => `
             <div class="item-card">
-                <img class="img-preview" src="${escapeHtml(item.image_url) || 'https://via.placeholder.com/300?text=Tr%E1%BB%91ng'}"
+                <img class="img-preview" src="${normalizeImageUrl(item.image_url)}"
                      alt="${escapeHtml(item.label)}"
-                     onerror="this.onerror=null; this.src='https://via.placeholder.com/300?text=L%E1%BB%97i+%E1%BA%A3nh'">
+                     onerror="this.onerror=null; this.src='/logo.jpg';">
                 <div class="item-title">${escapeHtml(item.label)}</div>
                 <div class="item-desc">Thứ tự: ${escapeHtml(item.order)}</div>
                 <div class="item-actions">

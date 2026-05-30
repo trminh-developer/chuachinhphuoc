@@ -31,6 +31,15 @@ if (hamburger) {
     });
 }
 
+function normalizeImageUrl(url) {
+    if (!url) return '/logo.jpg';
+    const trimmed = url.trim();
+    if (!trimmed.startsWith('http')) {
+        return '/logo.jpg'; // Hoặc đường dẫn host nếu cần
+    }
+    return escapeHtml(trimmed);
+}
+
 // ==================== Utilities ====================
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
@@ -111,9 +120,10 @@ async function loadEvents() {
             }
 
             // Fallback header: image if exists, else date banner
+            const safeImageUrl = normalizeImageUrl(event.image_url);
             const headerHtml = event.image_url 
                 ? `<div class="event-image-header" style="height: 200px; position: relative; border-radius: 8px 8px 0 0; overflow: hidden; background-color: #2c3e2a;">
-                       <img src="${escapeHtml(event.image_url)}" alt="Event Image" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1548625361-ec85303c7348?q=80&w=600&auto=format&fit=crop';">
+                       <img src="${safeImageUrl}" alt="Event Image" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='/logo.jpg';">
                        <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold;">
                            ${escapeHtml(event.event_date)}
                        </div>
@@ -169,7 +179,7 @@ async function loadGallery() {
             const galleryItem = document.createElement('div');
             galleryItem.className = 'gallery-item';
             galleryItem.innerHTML = `
-                <img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.label)}" loading="lazy" onerror="this.alt='Hình ảnh không tải được'">
+                <img src="${normalizeImageUrl(item.image_url)}" alt="${escapeHtml(item.label)}" loading="lazy" onerror="this.onerror=null; this.src='/logo.jpg';">
                 <div class="gallery-overlay">
                     <div class="gallery-label">${escapeHtml(item.label)}</div>
                 </div>
