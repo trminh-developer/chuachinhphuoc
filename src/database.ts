@@ -74,8 +74,14 @@ export async function getPool(): Promise<Pool> {
 
                 const isVercel = process.env.VERCEL === '1';
                 
-                // Loại bỏ sslmode từ connection string để cấu hình ssl thủ công bên dưới được áp dụng
-                connectionString = connectionString.replace(/(\?|&)sslmode=[^&]+/, '');
+                // Loại bỏ sslmode từ connection string một cách an toàn bằng đối tượng URL
+                try {
+                    const parsedUrl = new URL(connectionString);
+                    parsedUrl.searchParams.delete('sslmode');
+                    connectionString = parsedUrl.toString();
+                } catch (e) {
+                    console.warn('Could not parse connection string as URL');
+                }
 
                 pool = new Pool({
                     connectionString,
