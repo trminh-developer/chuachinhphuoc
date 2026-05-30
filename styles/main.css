@@ -58,12 +58,7 @@ body {
     align-items: center;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-}
-
-.logo a {
+.logo, .logo a {
     display: flex;
     align-items: center;
     gap: 0.75rem;
