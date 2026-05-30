@@ -133,7 +133,7 @@ router.post('/upload-token', authenticateAdmin, async (req: AuthRequest, res: Re
             throw new Error(`Supabase API error: ${errorText}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as any;
         const signedUrl = `${SUPABASE_URL}/storage/v1${data.url}`;
         const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/uploads/${safeFilename}`;
 
