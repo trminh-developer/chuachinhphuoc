@@ -3,105 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi Tiết Hoạt Động - Chùa Chính Phước</title>
+    <title>Chùa Diên Phước - NPĐ Chính Phước</title>
     <link rel="shortcut icon" href="./logo.jpg" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles/main.css">
-    <style>
-        .event-header {
-            width: 100%;
-            height: 50vh;
-            min-height: 400px;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .event-header::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(26,38,24,0.9) 100%);
-        }
-        .event-header-content {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            color: white;
-            padding: 20px;
-            max-width: 800px;
-        }
-        .event-header-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: var(--color-gold);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        .event-meta {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .event-body {
-            max-width: 800px;
-            margin: -50px auto 50px auto;
-            background: white;
-            position: relative;
-            z-index: 20;
-            padding: 50px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-            line-height: 1.8;
-            font-size: 1.15rem;
-            color: #333;
-        }
-        
-        .event-body p {
-            margin-bottom: 20px;
-            white-space: pre-wrap; /* Hỗ trợ ngắt dòng */
-        }
-        
-        .back-btn {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 12px 25px;
-            background: var(--color-pagoda-green);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        .back-btn:hover {
-            background: var(--color-pagoda-dark);
-            transform: translateY(-2px);
-        }
-
-        /* Loading Skeleton */
-        .skeleton {
-            background: #e0e0e0;
-            background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        @media (max-width: 768px) {
-            .event-header { height: 40vh; min-height: 300px; }
-            .event-header-title { font-size: 2rem; }
-            .event-body { margin: -30px 15px 30px 15px; padding: 30px 20px; }
-        }
-    </style>
+    <link rel="stylesheet" href="./styles/event.css">
 </head>
 <body>
 
@@ -110,7 +16,7 @@
         <div class="container header-container">
             <a href="https://chuachinhphuoc.vercel.app/" class="logo">
                 <img src="./logo.jpg" alt="Logo">
-                <span>Chùa Chính Phước</span>
+                <span>Chùa Diên Phước - NPĐ Chính Phước</span>
             </a>
         </div>
     </header>
@@ -125,103 +31,6 @@
         </div>
     </div>
 
-    <script>
-        const API_URL = '/api';
-
-        function escapeHtml(text) {
-            if (text === null || text === undefined) return '';
-            const str = String(text);
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        async function loadEventDetails() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-
-            if (!id) {
-                showError('Không tìm thấy mã bài viết.');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/events/${id}`);
-                const result = await response.json();
-
-                if (!response.ok || !result.success) {
-                    showError(result.error || 'Bài viết không tồn tại hoặc đã bị xóa.');
-                    return;
-                }
-
-                renderEvent(result.data);
-            } catch (error) {
-                console.error('Error:', error);
-                showError('Lỗi kết nối máy chủ. Vui lòng thử lại sau.');
-            }
-        }
-
-        function normalizeImageUrl(url) {
-            if (!url) return '/logo.jpg';
-            const firstUrl = url.split(',')[0].trim();
-            if (!firstUrl.startsWith('http')) return '/logo.jpg';
-            return escapeHtml(firstUrl);
-        }
-
-        function renderEvent(event) {
-            const wrapper = document.getElementById('event-content-wrapper');
-            
-            // Nếu không có ảnh, dùng ảnh mặc định phong cảnh chùa
-            const defaultImage = 'https://images.unsplash.com/photo-1548625361-ec85303c7348?q=80&w=2070&auto=format&fit=crop';
-            const bgImage = event.image_url ? normalizeImageUrl(event.image_url) : defaultImage;
-
-            document.title = `${event.title} - Chùa Chính Phước`;
-
-            const urls = event.image_url ? event.image_url.split(',').map(u => u.trim()).filter(u => u.startsWith('http')) : [];
-            let galleryHtml = '';
-            if (urls.length > 1) {
-                galleryHtml = `
-                    <div class="event-gallery" style="margin: 30px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                        ${urls.map(url => `<img src="${escapeHtml(url)}" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Hình ảnh sự kiện">`).join('')}
-                    </div>
-                `;
-            }
-
-            wrapper.innerHTML = `
-                <div class="event-header" style="background-image: url('${bgImage}')">
-                    <div class="event-header-content">
-                        <h1 class="event-header-title">${escapeHtml(event.title)}</h1>
-                        <div class="event-meta">
-                            <span>📅 Ngày: ${escapeHtml(event.event_date)}</span>
-                            <span>🏷️ ${escapeHtml(event.category)}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="event-body">
-                    <p style="white-space: pre-wrap; margin-bottom: 20px;">${escapeHtml(event.description)}</p>
-                    ${galleryHtml}
-                    <a href="/index.html#activities" class="back-btn">← Quay lại danh sách hoạt động</a>
-                </div>
-            `;
-        }
-
-        function showError(message) {
-            const wrapper = document.getElementById('event-content-wrapper');
-            wrapper.innerHTML = `
-                <div class="event-header" style="background: var(--color-pagoda-dark);">
-                    <div class="event-header-content">
-                        <h1 class="event-header-title">Đã xảy ra lỗi</h1>
-                    </div>
-                </div>
-                <div class="event-body" style="text-align: center;">
-                    <p style="color: #c62828; font-size: 1.2rem;">${escapeHtml(message)}</p>
-                    <a href="/index.html" class="back-btn">← Về Trang Chủ</a>
-                </div>
-            `;
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', loadEventDetails);
-    </script>
+    <script src="./scripts/event.js"></script>
 </body>
 </html>
