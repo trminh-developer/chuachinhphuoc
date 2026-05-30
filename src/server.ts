@@ -49,7 +49,7 @@ process.on('SIGINT', async () => {
     process.exit(0);
 });
 
-// Start server
+// Start server only if NOT on Vercel
 async function start() {
     try {
         await initDatabase();
@@ -64,6 +64,9 @@ async function start() {
     }
 }
 
-start();
+// Vercel sets the VERCEL environment variable. We only run start() locally.
+if (!process.env.VERCEL) {
+    start();
+}
 
 export default app;
