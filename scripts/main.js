@@ -39,6 +39,11 @@ function performSearch() {
     const query = searchInput.value.trim();
     if (!query) return;
     
+    // Đóng menu trên điện thoại sau khi tìm kiếm
+    if (navMenu && navMenu.classList.contains('active')) {
+        navMenu.classList.remove('active');
+    }
+    
     // Đặt lại con trỏ tìm kiếm về đầu trang nếu muốn tìm từ đầu
     // Tuy nhiên window.find sẽ tự động tìm tiếp nếu gọi lại nhiều lần
     const found = window.find(query, false, false, true, false, false, false);
