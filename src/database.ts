@@ -3,9 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Vượt qua lỗi Self-Signed Certificate của Supabase
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
+// Xóa NODE_TLS_REJECT_UNAUTHORIZED='0' để tránh cảnh báo bảo mật trên Vercel
+// Sử dụng config ssl: { rejectUnauthorized: false } của thư viện pg thay thế.
 // =============================================================================
 // TypeScript Interfaces
 // =============================================================================
