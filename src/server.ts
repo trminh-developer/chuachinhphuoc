@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import apiRoutes from './routes/api';
-import { initDatabase } from './database';
+import { initDatabase, closePool } from './database';
 
 dotenv.config();
 
@@ -33,8 +33,8 @@ app.get('/admin', (req: Request, res: Response) => {
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    console.error(err);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('❌ Error:', err);
+    res.status(500).json({ success: false, error: 'Internal server error', message: err.message });
 });
 
 // 404 handler
@@ -42,16 +42,24 @@ app.use((req: Request, res: Response) => {
     res.status(404).json({ success: false, error: 'Not found' });
 });
 
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('\n🙏 Gracefully shutting down...');
+    await closePool();
+    process.exit(0);
+});
+
 // Start server
 async function start() {
     try {
         await initDatabase();
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log(`🙏 Chùa Chính Phước server running on http://localhost:${PORT}`);
             console.log(`   Admin panel: http://localhost:${PORT}/admin`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
+        await closePool();
         process.exit(1);
     }
 }

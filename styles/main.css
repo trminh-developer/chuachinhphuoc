@@ -526,10 +526,8 @@ body {
 }
 
 .contact-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3rem;
-    align-items: start;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .contact-info {
@@ -766,10 +764,6 @@ body {
     }
 
     .footer-content {
-        grid-template-columns: 1fr;
-    }
-
-    .contact-content {
         grid-template-columns: 1fr;
     }
 }

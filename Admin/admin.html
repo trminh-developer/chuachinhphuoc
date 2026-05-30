@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Chùa Chính Phước</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles/admin.css">
 </head>
 <body>
@@ -50,11 +51,12 @@
                 <!-- Events Section -->
                 <div id="events" class="section active">
                     <div class="form-section">
-                        <h2>Thêm Hoạt Động Mới</h2>
+                        <h2 id="eventFormTitle">Thêm Hoạt Động Mới</h2>
                         <form id="eventForm">
+                            <input type="hidden" id="eventId">
                             <div class="form-group">
-                                <label for="eventDate">Ngày (DD/MM)</label>
-                                <input type="text" id="eventDate" placeholder="01/01" required>
+                                <label for="eventDate">Ngày (DD/MM/YYYY)</label>
+                                <input type="text" id="eventDate" placeholder="01/01/2026" required>
                             </div>
                             <div class="form-group">
                                 <label for="eventTitle">Tiêu Đề</label>
@@ -62,23 +64,35 @@
                             </div>
                             <div class="form-group">
                                 <label for="eventCategory">Danh Mục</label>
-                                <input type="text" id="eventCategory" placeholder="Lễ hội, Tu tập, Giảng dạy..." required>
+                                <select id="eventCategory" required>
+                                    <option value="" disabled selected>-- Chọn danh mục --</option>
+                                    <option value="Lễ hội">Lễ hội</option>
+                                    <option value="Tu tập">Tu tập</option>
+                                    <option value="Giảng dạy">Giảng dạy</option>
+                                    <option value="Lễ tụng">Lễ tụng</option>
+                                    <option value="Tết">Tết</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label for="eventDescription">Mô Tả</label>
                                 <textarea id="eventDescription" required></textarea>
                             </div>
-                            <button type="submit" class="btn-submit">Thêm Hoạt Động</button>
+                            <div class="form-actions">
+                                <button type="submit" id="eventSubmitBtn" class="btn-submit">Thêm Hoạt Động</button>
+                                <button type="button" id="eventCancelBtn" class="btn-cancel" style="display:none;" onclick="cancelEdit('event')">Hủy Cập Nhật</button>
+                            </div>
                         </form>
                     </div>
-                    <div id="eventsList" class="items-list" style="margin-top: 30px;"></div>
+                    <div id="eventsList" class="items-list"></div>
                 </div>
 
                 <!-- Gallery Section -->
                 <div id="gallery" class="section">
                     <div class="form-section">
-                        <h2>Thêm Hình Ảnh Mới</h2>
+                        <h2 id="galleryFormTitle">Thêm Hình Ảnh Mới</h2>
                         <form id="galleryForm">
+                            <input type="hidden" id="galleryId">
                             <div class="form-group">
                                 <label for="imageUrl">URL Hình Ảnh</label>
                                 <input type="text" id="imageUrl" placeholder="https://..." required>
@@ -91,17 +105,21 @@
                                 <label for="imageOrder">Thứ Tự (tùy chọn)</label>
                                 <input type="number" id="imageOrder" value="0">
                             </div>
-                            <button type="submit" class="btn-submit">Thêm Hình Ảnh</button>
+                            <div class="form-actions">
+                                <button type="submit" id="gallerySubmitBtn" class="btn-submit">Thêm Hình Ảnh</button>
+                                <button type="button" id="galleryCancelBtn" class="btn-cancel" style="display:none;" onclick="cancelEdit('gallery')">Hủy Cập Nhật</button>
+                            </div>
                         </form>
                     </div>
-                    <div id="galleryList" class="items-list" style="margin-top: 30px;"></div>
+                    <div id="galleryList" class="items-list"></div>
                 </div>
 
                 <!-- Audio Section -->
                 <div id="audio" class="section">
                     <div class="form-section">
-                        <h2>Thêm Âm Thanh Mới</h2>
+                        <h2 id="audioFormTitle">Thêm Âm Thanh Mới</h2>
                         <form id="audioForm">
+                            <input type="hidden" id="audioId">
                             <div class="form-group">
                                 <label for="audioUrl">URL Tệp Âm Thanh (MP3)</label>
                                 <input type="text" id="audioUrl" placeholder="https://..." required>
@@ -114,10 +132,13 @@
                                 <label for="audioDescription">Mô Tả</label>
                                 <textarea id="audioDescription" placeholder="Mô tả bài tụng kinh, ca đảo..."></textarea>
                             </div>
-                            <button type="submit" class="btn-submit">Thêm Âm Thanh</button>
+                            <div class="form-actions">
+                                <button type="submit" id="audioSubmitBtn" class="btn-submit">Thêm Âm Thanh</button>
+                                <button type="button" id="audioCancelBtn" class="btn-cancel" style="display:none;" onclick="cancelEdit('audio')">Hủy Cập Nhật</button>
+                            </div>
                         </form>
                     </div>
-                    <div id="audioList" class="items-list" style="margin-top: 30px;"></div>
+                    <div id="audioList" class="items-list"></div>
                 </div>
 
                 <!-- Contacts Section -->

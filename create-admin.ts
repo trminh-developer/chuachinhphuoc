@@ -1,10 +1,22 @@
-import mysql from 'mysql2/promise';
+import sql from 'mssql/msnodesqlv8';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-async function createAdmin() {
+const dbServer = process.env.DB_HOST || 'localhost';
+const dbName = process.env.DB_NAME || 'pagoda_website';
+
+const sqlConfig: any = {
+    connectionString: `Driver={ODBC Driver 17 for SQL Server};Server=${dbServer};Database=${dbName};Trusted_Connection=Yes;`,
+    pool: {
+        min: 1,
+        max: 3,
+        idleTimeoutMillis: 10000
+    }
+};
+
+async function createAdmin(): Promise<void> {
     const username = process.argv[2];
     const email = process.argv[3];
     const password = process.argv[4];
@@ -28,47 +40,80 @@ async function createAdmin() {
         process.exit(1);
     }
 
-    try {
-        const connection = await mysql.createConnection({
-            host: process.env.DB_HOST || 'TrMinh',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
-            database: process.env.DB_NAME || 'pagoda_website'
-        });
+    let pool: sql.ConnectionPool | null = null;
 
-        // Ensure table exists
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS admins (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(100) NOT NULL UNIQUE,
-                email VARCHAR(100) NOT NULL UNIQUE,
-                password_hash VARCHAR(500) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    try {
+        pool = new sql.ConnectionPool(sqlConfig);
+        await pool.connect();
+        console.log('✅ Đã kết nối SQL Server');
+
+        // Đảm bảo bảng admins tồn tại
+        await pool.request().query(`
+            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'admins')
+            CREATE TABLE admins (
+                id              INT             PRIMARY KEY IDENTITY(1,1),
+                username        VARCHAR(100)    NOT NULL,
+                email           VARCHAR(100)    NOT NULL,
+                password_hash   VARCHAR(500)    NOT NULL,
+                created_at      DATETIME        DEFAULT GETDATE(),
+                updated_at      DATETIME        DEFAULT GETDATE(),
+                CONSTRAINT UQ_admins_username UNIQUE (username),
+                CONSTRAINT UQ_admins_email    UNIQUE (email)
+            );
         `);
 
+        // Kiểm tra admin đã tồn tại chưa
+        const existingCheck = await pool.request()
+            .input('username', sql.VarChar(100), username)
+            .input('email', sql.VarChar(100), email)
+            .query('SELECT id, username, email FROM admins WHERE username = @username OR email = @email');
+
+        if (existingCheck.recordset.length > 0) {
+            const existing = existingCheck.recordset[0];
+            if (existing.username === username) {
+                console.log(`\n⚠️  Username "${username}" đã tồn tại!`);
+            }
+            if (existing.email === email) {
+                console.log(`\n⚠️  Email "${email}" đã tồn tại!`);
+            }
+            process.exit(1);
+        }
+
+        // Hash password và tạo admin
         const passwordHash = await bcrypt.hash(password, 10);
 
-        await connection.execute(
-            'INSERT INTO admins (username, email, password_hash) VALUES (?, ?, ?)',
-            [username, email, passwordHash]
-        );
+        const result = await pool.request()
+            .input('username', sql.VarChar(100), username)
+            .input('email', sql.VarChar(100), email)
+            .input('password_hash', sql.VarChar(500), passwordHash)
+            .query('INSERT INTO admins (username, email, password_hash) OUTPUT INSERTED.id VALUES (@username, @email, @password_hash)');
 
-        await connection.end();
+        const adminId = result.recordset[0].id;
 
-        console.log('✅ Tạo admin thành công!');
+        console.log('\n✅ Tạo admin thành công!');
         console.log(`\n📝 Thông tin đăng nhập:`);
+        console.log(`   ID:       ${adminId}`);
         console.log(`   Username: ${username}`);
         console.log(`   Email:    ${email}`);
         console.log(`   Password: ${password}`);
-        console.log(`\n🔗 Truy cập admin tại: http://localhost:3001/admin`);
+        console.log(`\n🔗 Truy cập admin tại: http://localhost:${process.env.PORT || 3001}/admin`);
 
     } catch (error: any) {
         console.error('❌ Lỗi:', error.message);
-        if (error.message.includes('Duplicate entry') || error.code === 'ER_DUP_ENTRY') {
+
+        // SQL Server duplicate key error: number 2627 (UNIQUE violation) hoặc 2601 (UNIQUE INDEX violation)
+        if (error.number === 2627 || error.number === 2601) {
             console.log('\n⚠️  Username hoặc email đã tồn tại!');
         }
         process.exit(1);
+    } finally {
+        if (pool) {
+            try {
+                await pool.close();
+            } catch {
+                // Bỏ qua lỗi khi đóng pool
+            }
+        }
     }
 }
 

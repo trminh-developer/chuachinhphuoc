@@ -1,7 +1,7 @@
 {
   "name": "pagoda-website",
   "version": "1.0.0",
-  "description": "Chùa Chính Phước - Temple Website",
+  "description": "Chùa Chính Phước - Temple Website with SQL Server Backend",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -16,8 +16,8 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "mssql": "^12.5.4",
-    "mysql2": "^3.6.0"
+    "msnodesqlv8": "^5.2.0",
+    "mssql": "^12.5.4"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

@@ -1,3 +1,10 @@
+// =============================================================================
+// Chùa Chính Phước — Client Frontend (main.js)
+// Fetch dữ liệu từ API thực, không dùng mock data.
+// =============================================================================
+
+const API_URL = '/api';
+
 // ==================== Mobile Menu ====================
 const hamburger = document.getElementById('hamburger');
 const navMenu = document.querySelector('.nav-menu');
@@ -15,113 +22,137 @@ if (hamburger) {
     });
 }
 
-// ==================== Sample Data ====================
-const eventsData = [
-    {
-        date: '15/08',
-        title: 'Lễ Vu Lan',
-        description: 'Tưởng nhớ những Phật tử đã từng mở chia, truyền kinh pháp cho chúng ta.',
-        category: 'Lễ hội'
-    },
-    {
-        date: '01/01',
-        title: 'Tết Nguyên Đán',
-        description: 'Kỷ niệm năm mới với các buổi tụng kinh và bài giảng Phật pháp đầu năm.',
-        category: 'Tết'
-    },
-    {
-        date: '08/04',
-        title: 'Lễ Phật Đản',
-        description: 'Kỷ niệm ngày Đức Phật Thích Ca Mâu Ni ra đời - ngày thiêng liêng của Phật giáo.',
-        category: 'Lễ hội'
-    },
-    {
-        date: '15/10',
-        title: 'Thiền định chiều',
-        description: 'Buổi thiền định lâu dài từ chiều đến tối, giúp tu tập sâu sắc hơn.',
-        category: 'Tu tập'
-    },
-    {
-        date: '28/03',
-        title: 'Giảng kinh Pháp Hoa',
-        description: 'Giáo sư giảng giải kinh Pháp Hoa - một trong những kinh điển quan trọng nhất của Phật giáo.',
-        category: 'Giảng dạy'
-    },
-    {
-        date: '09/06',
-        title: 'Lễ Tam Bảo',
-        description: 'Cúng dường Tam Bảo (Phật, Pháp, Tăng) trong không khí trang nghiêm và trang trọng.',
-        category: 'Lễ tụng'
-    }
-];
+// ==================== XSS Protection ====================
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
 
-const galleryData = [
-    {
-        src: 'assets/gallery-1.jpg',
-        label: 'Sảnh chính'
-    },
-    {
-        src: 'assets/gallery-2.jpg',
-        label: 'Tượng Phật'
-    },
-    {
-        src: 'assets/gallery-3.jpg',
-        label: 'Khu vườn'
-    },
-    {
-        src: 'assets/gallery-4.jpg',
-        label: 'Cộng đồng tu tập'
-    },
-    {
-        src: 'assets/gallery-5.jpg',
-        label: 'Tiền sảnh'
-    },
-    {
-        src: 'assets/gallery-6.jpg',
-        label: 'Lễ hội'
+// ==================== Loading Skeleton ====================
+function showLoadingSkeleton(container, count) {
+    if (!container) return;
+    let skeletonHtml = '';
+    for (let i = 0; i < count; i++) {
+        skeletonHtml += `
+            <div class="skeleton-card" style="
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 12px;
+                min-height: 180px;
+            "></div>
+        `;
     }
-];
+    container.innerHTML = skeletonHtml;
 
-// ==================== Load Events ====================
-function loadEvents() {
+    // Inject shimmer animation nếu chưa có
+    if (!document.getElementById('shimmer-style')) {
+        const style = document.createElement('style');
+        style.id = 'shimmer-style';
+        style.textContent = `
+            @keyframes shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// ==================== Load Events from API ====================
+async function loadEvents() {
     const eventsContainer = document.getElementById('events-container');
+    if (!eventsContainer) return;
 
-    eventsData.forEach(event => {
-        const eventCard = document.createElement('div');
-        eventCard.className = 'event-card';
-        eventCard.innerHTML = `
-            <div class="event-date">${event.date}</div>
-            <div class="event-content">
-                <h3 class="event-title">${event.title}</h3>
-                <p class="event-description">${event.description}</p>
-                <div class="event-footer">
-                    <span class="event-category">${event.category}</span>
-                    <a href="#" class="event-link">Xem chi tiết →</a>
+    showLoadingSkeleton(eventsContainer, 3);
+
+    try {
+        const response = await fetch(`${API_URL}/events`);
+
+        if (!response.ok) {
+            console.error('Failed to fetch events:', response.status, response.statusText);
+            eventsContainer.innerHTML = '<p style="color:#c00; padding:20px;">Không thể tải hoạt động. Vui lòng thử lại sau.</p>';
+            return;
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data || result.data.length === 0) {
+            eventsContainer.innerHTML = '<p style="color:#999; padding:20px;">Chưa có hoạt động nào được đăng.</p>';
+            return;
+        }
+
+        eventsContainer.innerHTML = '';
+        result.data.forEach(event => {
+            const eventCard = document.createElement('div');
+            eventCard.className = 'event-card';
+            eventCard.innerHTML = `
+                <div class="event-date">${escapeHtml(event.event_date)}</div>
+                <div class="event-content">
+                    <h3 class="event-title">${escapeHtml(event.title)}</h3>
+                    <p class="event-description">${escapeHtml(event.description)}</p>
+                    <div class="event-footer">
+                        <span class="event-category">${escapeHtml(event.category)}</span>
+                        <a href="#" class="event-link">Xem chi tiết →</a>
+                    </div>
                 </div>
-            </div>
-        `;
-        eventsContainer.appendChild(eventCard);
-    });
+            `;
+            eventsContainer.appendChild(eventCard);
+        });
+    } catch (error) {
+        console.error('❌ Error loading events:', error);
+        if (eventsContainer) {
+            eventsContainer.innerHTML = '<p style="color:#c00; padding:20px;">Lỗi kết nối. Vui lòng thử lại.</p>';
+        }
+    }
 }
 
-// ==================== Load Gallery ====================
-function loadGallery() {
+// ==================== Load Gallery from API ====================
+async function loadGallery() {
     const galleryContainer = document.getElementById('gallery-container');
+    if (!galleryContainer) return;
 
-    galleryData.forEach((item, index) => {
-        const galleryItem = document.createElement('div');
-        galleryItem.className = 'gallery-item';
-        galleryItem.innerHTML = `
-            <img src="${item.src}" alt="${item.label}" loading="lazy">
-            <div class="gallery-overlay">
-                <div class="gallery-label">${item.label}</div>
-            </div>
-        `;
-        galleryContainer.appendChild(galleryItem);
-    });
+    showLoadingSkeleton(galleryContainer, 6);
+
+    try {
+        const response = await fetch(`${API_URL}/gallery`);
+
+        if (!response.ok) {
+            console.error('Failed to fetch gallery:', response.status, response.statusText);
+            galleryContainer.innerHTML = '<p style="color:#c00; padding:20px;">Không thể tải thư viện ảnh. Vui lòng thử lại sau.</p>';
+            return;
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data || result.data.length === 0) {
+            galleryContainer.innerHTML = '<p style="color:#999; padding:20px;">Chưa có hình ảnh nào.</p>';
+            return;
+        }
+
+        galleryContainer.innerHTML = '';
+        result.data.forEach((item) => {
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item';
+            galleryItem.innerHTML = `
+                <img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.label)}" loading="lazy" onerror="this.alt='Hình ảnh không tải được'">
+                <div class="gallery-overlay">
+                    <div class="gallery-label">${escapeHtml(item.label)}</div>
+                </div>
+            `;
+            galleryContainer.appendChild(galleryItem);
+        });
+    } catch (error) {
+        console.error('❌ Error loading gallery:', error);
+        if (galleryContainer) {
+            galleryContainer.innerHTML = '<p style="color:#c00; padding:20px;">Lỗi kết nối. Vui lòng thử lại.</p>';
+        }
+    }
 }
 
-// ==================== Scroll Effects ====================
+// ==================== Scroll Reveal Effects ====================
 function observeElements() {
     const observerOptions = {
         threshold: 0.1,
@@ -137,7 +168,7 @@ function observeElements() {
         });
     }, observerOptions);
 
-    // Observe all cards
+    // Observe tất cả cards hiện có tại thời điểm gọi
     document.querySelectorAll('.event-card, .teaching-card, .gallery-item').forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(20px)';
@@ -152,15 +183,12 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         const href = this.getAttribute('href');
         if (href !== '#' && document.querySelector(href)) {
             e.preventDefault();
+            document.querySelector(href).scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         }
     });
-});
-
-// ==================== Initialize ====================
-document.addEventListener('DOMContentLoaded', () => {
-    loadEvents();
-    loadGallery();
-    observeElements();
 });
 
 // ==================== Contact Form ====================
@@ -171,28 +199,45 @@ if (contactForm) {
     contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const submitBtn = contactForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.textContent : '';
+
         const formData = {
-            name: document.getElementById('name').value,
-            email: document.getElementById('email').value,
-            phone: document.getElementById('phone').value || null,
-            message: document.getElementById('message').value,
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value?.trim() || null,
+            message: document.getElementById('message').value.trim(),
             type: document.getElementById('type').value
         };
 
+        if (!formData.name || !formData.email || !formData.message) {
+            if (formMessage) {
+                formMessage.className = 'form-message error';
+                formMessage.textContent = 'Vui lòng điền đầy đủ thông tin.';
+                formMessage.style.display = 'block';
+            }
+            return;
+        }
+
+        // Disable button khi đang gửi
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Đang gửi...';
+        }
+
         try {
-            const response = await fetch('/api/contact', {
+            const response = await fetch(`${API_URL}/contact`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
 
             const data = await response.json();
 
-            if (response.ok) {
+            if (response.ok && data.success) {
                 formMessage.className = 'form-message success';
                 formMessage.textContent = data.message || 'Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm!';
+                formMessage.style.display = 'block';
                 contactForm.reset();
                 setTimeout(() => {
                     formMessage.style.display = 'none';
@@ -200,11 +245,28 @@ if (contactForm) {
             } else {
                 formMessage.className = 'form-message error';
                 formMessage.textContent = data.error || 'Có lỗi xảy ra. Vui lòng thử lại.';
+                formMessage.style.display = 'block';
             }
         } catch (error) {
-            console.error('Error submitting form:', error);
+            console.error('❌ Error submitting form:', error);
             formMessage.className = 'form-message error';
             formMessage.textContent = 'Không thể gửi tin nhắn. Vui lòng thử lại sau.';
+            formMessage.style.display = 'block';
+        } finally {
+            // Re-enable button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
         }
     });
 }
+
+// ==================== Initialize ====================
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch data song song
+    await Promise.all([loadEvents(), loadGallery()]);
+
+    // Gọi observeElements SAU KHI data đã render xong
+    observeElements();
+});

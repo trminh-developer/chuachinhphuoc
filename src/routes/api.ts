@@ -1,47 +1,71 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import {
-    getEvents, addEvent, deleteEvent,
-    getGalleryItems, addGalleryItem, deleteGalleryItem,
-    saveContact, getContacts,
-    createAdmin, getAdminByUsername, getAdminById
+    getEvents, addEvent, updateEvent, deleteEvent,
+    getGalleryItems, addGalleryItem, updateGalleryItem, deleteGalleryItem,
+    saveContact, getContacts, deleteContact,
+    createAdmin, getAdminByUsername
 } from '../database';
 import { authenticateAdmin, generateToken, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// ==================== Authentication ====================
+// =============================================================================
+// Standardized Response Helper
+// =============================================================================
+interface ApiResponse {
+    success: boolean;
+    data?: any;
+    message?: string;
+    error?: string;
+}
+
+function sendResponse(res: Response, statusCode: number, success: boolean, data?: any, message?: string, error?: string): void {
+    const response: ApiResponse = { success };
+    if (data !== undefined) response.data = data;
+    if (message) response.message = message;
+    if (error) response.error = error;
+    res.status(statusCode).json(response);
+}
+
+// =============================================================================
+// Authentication
+// =============================================================================
 router.post('/auth/register', async (req: Request, res: Response) => {
     try {
         const { username, email, password } = req.body;
 
         if (!username || !email || !password) {
-            return res.status(400).json({ success: false, error: 'Thiếu thông tin: username, email, password' });
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu thông tin: username, email, password');
+        }
+
+        if (typeof username !== 'string' || username.trim().length < 3) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Username phải có ít nhất 3 ký tự');
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            return res.status(400).json({ success: false, error: 'Định dạng email không hợp lệ' });
+            return sendResponse(res, 400, false, undefined, undefined, 'Định dạng email không hợp lệ');
         }
 
-        const existingAdmin = await getAdminByUsername(username);
+        if (typeof password !== 'string' || password.length < 6) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Mật khẩu phải có ít nhất 6 ký tự');
+        }
+
+        const existingAdmin = await getAdminByUsername(username.trim());
         if (existingAdmin) {
-            return res.status(400).json({ success: false, error: 'Username đã tồn tại' });
+            return sendResponse(res, 400, false, undefined, undefined, 'Username đã tồn tại');
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
-        const adminId = await createAdmin(username, email, passwordHash);
-        const token = generateToken(adminId, username);
+        const adminId = await createAdmin(username.trim(), email.trim(), passwordHash);
+        const token = generateToken(adminId, username.trim());
 
-        res.status(201).json({
-            success: true,
-            message: 'Tạo tài khoản admin thành công',
-            token,
-            admin: { id: adminId, username, email }
-        });
+        sendResponse(res, 201, true, { id: adminId, username: username.trim(), email: email.trim(), token }, 'Tạo tài khoản admin thành công');
+        return;
     } catch (error: any) {
-        console.error('Register error:', error);
-        res.status(500).json({ success: false, error: error.message || 'Lỗi đăng ký' });
+        console.error('❌ Register error:', error);
+        return sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi đăng ký');
     }
 });
 
@@ -50,41 +74,39 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         const { username, password } = req.body;
 
         if (!username || !password) {
-            return res.status(400).json({ success: false, error: 'Thiếu username hoặc password' });
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu username hoặc password');
         }
 
-        const admin = await getAdminByUsername(username);
+        const admin = await getAdminByUsername(username.trim());
         if (!admin) {
-            return res.status(401).json({ success: false, error: 'Sai username hoặc password' });
+            return sendResponse(res, 401, false, undefined, undefined, 'Sai username hoặc password');
         }
 
         const passwordMatch = await bcrypt.compare(password, admin.password_hash);
         if (!passwordMatch) {
-            return res.status(401).json({ success: false, error: 'Sai username hoặc password' });
+            return sendResponse(res, 401, false, undefined, undefined, 'Sai username hoặc password');
         }
 
         const token = generateToken(admin.id, admin.username);
 
-        res.json({
-            success: true,
-            message: 'Đăng nhập thành công',
-            token,
-            admin: { id: admin.id, username: admin.username, email: admin.email }
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ success: false, error: 'Lỗi đăng nhập' });
+        sendResponse(res, 200, true, { id: admin.id, username: admin.username, email: admin.email, token }, 'Đăng nhập thành công');
+        return;
+    } catch (error: any) {
+        console.error('❌ Login error:', error);
+        return sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi đăng nhập');
     }
 });
 
-// ==================== Events ====================
+// =============================================================================
+// Events CRUD
+// =============================================================================
 router.get('/events', async (req: Request, res: Response) => {
     try {
         const events = await getEvents();
-        res.json({ success: true, data: events });
-    } catch (error) {
-        console.error('Error fetching events:', error);
-        res.status(500).json({ success: false, error: 'Lỗi tải hoạt động' });
+        sendResponse(res, 200, true, events, 'Lấy danh sách hoạt động thành công');
+    } catch (error: any) {
+        console.error('❌ Error fetching events:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi tải hoạt động');
     }
 });
 
@@ -93,38 +115,81 @@ router.post('/events', authenticateAdmin, async (req: AuthRequest, res: Response
         const { date, title, description, category } = req.body;
 
         if (!date || !title || !description || !category) {
-            return res.status(400).json({ success: false, error: 'Thiếu thông tin: date, title, description, category' });
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu thông tin: date, title, description, category');
         }
 
-        const eventId = await addEvent(date, title, description, category);
-        res.status(201).json({ success: true, message: 'Thêm hoạt động thành công', id: eventId });
-    } catch (error) {
-        console.error('Error creating event:', error);
-        res.status(500).json({ success: false, error: 'Lỗi tạo hoạt động' });
+        // Validate date format DD/MM/YYYY
+        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (!dateRegex.test(date.trim())) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Định dạng ngày phải là DD/MM/YYYY (vd: 01/01/2026)');
+        }
+
+        const eventId = await addEvent(date.trim(), title.trim(), description.trim(), category.trim());
+        sendResponse(res, 201, true, { id: eventId }, 'Thêm hoạt động thành công');
+    } catch (error: any) {
+        console.error('❌ Error creating event:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi tạo hoạt động');
+    }
+});
+
+router.put('/events/:id', authenticateAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id) || id <= 0) {
+            return sendResponse(res, 400, false, undefined, undefined, 'ID không hợp lệ');
+        }
+
+        const { date, title, description, category } = req.body;
+        if (!date || !title || !description || !category) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu thông tin: date, title, description, category');
+        }
+
+        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (!dateRegex.test(date.trim())) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Định dạng ngày phải là DD/MM/YYYY');
+        }
+
+        const updated = await updateEvent(id, date.trim(), title.trim(), description.trim(), category.trim());
+        if (!updated) {
+            return sendResponse(res, 404, false, undefined, undefined, 'Không tìm thấy hoạt động');
+        }
+
+        sendResponse(res, 200, true, { id }, 'Cập nhật hoạt động thành công');
+    } catch (error: any) {
+        console.error('❌ Error updating event:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi cập nhật hoạt động');
     }
 });
 
 router.delete('/events/:id', authenticateAdmin, async (req: AuthRequest, res: Response) => {
     try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID không hợp lệ' });
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id) || id <= 0) {
+            return sendResponse(res, 400, false, undefined, undefined, 'ID không hợp lệ');
+        }
 
-        await deleteEvent(id);
-        res.json({ success: true, message: 'Xóa hoạt động thành công' });
-    } catch (error) {
-        console.error('Error deleting event:', error);
-        res.status(500).json({ success: false, error: 'Lỗi xóa hoạt động' });
+        const deleted = await deleteEvent(id);
+        if (!deleted) {
+            return sendResponse(res, 404, false, undefined, undefined, 'Không tìm thấy hoạt động');
+        }
+
+        sendResponse(res, 200, true, undefined, 'Xóa hoạt động thành công');
+    } catch (error: any) {
+        console.error('❌ Error deleting event:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi xóa hoạt động');
     }
 });
 
-// ==================== Gallery ====================
+// =============================================================================
+// Gallery CRUD
+// =============================================================================
 router.get('/gallery', async (req: Request, res: Response) => {
     try {
         const items = await getGalleryItems();
-        res.json({ success: true, data: items });
-    } catch (error) {
-        console.error('Error fetching gallery:', error);
-        res.status(500).json({ success: false, error: 'Lỗi tải thư viện ảnh' });
+        sendResponse(res, 200, true, items, 'Lấy thư viện ảnh thành công');
+    } catch (error: any) {
+        console.error('❌ Error fetching gallery:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi tải thư viện ảnh');
     }
 });
 
@@ -133,66 +198,127 @@ router.post('/gallery', authenticateAdmin, async (req: AuthRequest, res: Respons
         const { imageUrl, label, order } = req.body;
 
         if (!imageUrl || !label) {
-            return res.status(400).json({ success: false, error: 'Thiếu imageUrl hoặc label' });
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu imageUrl hoặc label');
         }
 
-        const itemId = await addGalleryItem(imageUrl, label, order || 0);
-        res.status(201).json({ success: true, message: 'Thêm hình ảnh thành công', id: itemId });
-    } catch (error) {
-        console.error('Error adding gallery item:', error);
-        res.status(500).json({ success: false, error: 'Lỗi thêm hình ảnh' });
+        const parsedOrder = typeof order === 'number' ? order : parseInt(order, 10) || 0;
+        const itemId = await addGalleryItem(imageUrl.trim(), label.trim(), parsedOrder);
+        sendResponse(res, 201, true, { id: itemId }, 'Thêm hình ảnh thành công');
+    } catch (error: any) {
+        console.error('❌ Error adding gallery item:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi thêm hình ảnh');
+    }
+});
+
+router.put('/gallery/:id', authenticateAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id) || id <= 0) {
+            return sendResponse(res, 400, false, undefined, undefined, 'ID không hợp lệ');
+        }
+
+        const { imageUrl, label, order } = req.body;
+        if (!imageUrl || !label) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu imageUrl hoặc label');
+        }
+
+        const parsedOrder = typeof order === 'number' ? order : parseInt(order, 10) || 0;
+        const updated = await updateGalleryItem(id, imageUrl.trim(), label.trim(), parsedOrder);
+        if (!updated) {
+            return sendResponse(res, 404, false, undefined, undefined, 'Không tìm thấy hình ảnh');
+        }
+
+        sendResponse(res, 200, true, { id }, 'Cập nhật hình ảnh thành công');
+    } catch (error: any) {
+        console.error('❌ Error updating gallery item:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi cập nhật hình ảnh');
     }
 });
 
 router.delete('/gallery/:id', authenticateAdmin, async (req: AuthRequest, res: Response) => {
     try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID không hợp lệ' });
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id) || id <= 0) {
+            return sendResponse(res, 400, false, undefined, undefined, 'ID không hợp lệ');
+        }
 
-        await deleteGalleryItem(id);
-        res.json({ success: true, message: 'Xóa hình ảnh thành công' });
-    } catch (error) {
-        console.error('Error deleting gallery item:', error);
-        res.status(500).json({ success: false, error: 'Lỗi xóa hình ảnh' });
+        const deleted = await deleteGalleryItem(id);
+        if (!deleted) {
+            return sendResponse(res, 404, false, undefined, undefined, 'Không tìm thấy hình ảnh');
+        }
+
+        sendResponse(res, 200, true, undefined, 'Xóa hình ảnh thành công');
+    } catch (error: any) {
+        console.error('❌ Error deleting gallery item:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi xóa hình ảnh');
     }
 });
 
-// ==================== Contacts ====================
+// =============================================================================
+// Contacts
+// =============================================================================
 router.post('/contact', async (req: Request, res: Response) => {
     try {
         const { name, email, phone, message, type = 'inquiry' } = req.body;
 
         if (!name || !email || !message) {
-            return res.status(400).json({ success: false, error: 'Thiếu thông tin: name, email, message' });
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu thông tin: name, email, message');
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ success: false, error: 'Định dạng email không hợp lệ' });
+        if (!emailRegex.test(email.trim())) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Định dạng email không hợp lệ');
         }
 
-        const contactId = await saveContact(name, email, phone || null, message, type);
-        res.status(201).json({ success: true, message: 'Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm!', id: contactId });
-    } catch (error) {
-        console.error('Error saving contact:', error);
-        res.status(500).json({ success: false, error: 'Lỗi lưu tin nhắn' });
+        const validTypes = ['inquiry', 'donation', 'newsletter'];
+        const contactType = validTypes.includes(type) ? type : 'inquiry';
+
+        const contactId = await saveContact(name.trim(), email.trim(), phone?.trim() || null, message.trim(), contactType);
+        sendResponse(res, 201, true, { id: contactId }, 'Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm!');
+    } catch (error: any) {
+        console.error('❌ Error saving contact:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi lưu tin nhắn');
     }
 });
 
-// GET /contacts — protected, for admin panel
 router.get('/contacts', authenticateAdmin, async (req: AuthRequest, res: Response) => {
     try {
         const contacts = await getContacts();
-        res.json({ success: true, data: contacts });
-    } catch (error) {
-        console.error('Error fetching contacts:', error);
-        res.status(500).json({ success: false, error: 'Lỗi tải danh sách liên hệ' });
+        sendResponse(res, 200, true, contacts, 'Lấy danh sách liên hệ thành công');
+    } catch (error: any) {
+        console.error('❌ Error fetching contacts:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi tải danh sách liên hệ');
     }
 });
 
-// ==================== Health Check ====================
+router.delete('/contacts/:id', authenticateAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id) || id <= 0) {
+            return sendResponse(res, 400, false, undefined, undefined, 'ID không hợp lệ');
+        }
+
+        const deleted = await deleteContact(id);
+        if (!deleted) {
+            return sendResponse(res, 404, false, undefined, undefined, 'Không tìm thấy liên hệ');
+        }
+
+        sendResponse(res, 200, true, undefined, 'Xóa liên hệ thành công');
+    } catch (error: any) {
+        console.error('❌ Error deleting contact:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi xóa liên hệ');
+    }
+});
+
+// =============================================================================
+// Health Check
+// =============================================================================
 router.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'OK', service: 'Chùa Chính Phước API', timestamp: new Date().toISOString() });
+    sendResponse(res, 200, true, {
+        status: 'OK',
+        service: 'Chùa Chính Phước API',
+        timestamp: new Date().toISOString()
+    });
 });
 
 export default router;
