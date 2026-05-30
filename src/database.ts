@@ -58,7 +58,7 @@ export async function getPool(): Promise<Pool> {
         poolConnecting = (async () => {
             try {
                 // Determine connection string
-                let connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+                let connectionString = process.env.POSTGRES_URL_POSTGRES_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL_POSTGRES_PRISMA_URL;
                 
                 // Fallback to local postgres if not set
                 if (!connectionString) {

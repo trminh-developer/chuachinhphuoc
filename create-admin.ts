@@ -15,7 +15,7 @@ async function createAdmin(): Promise<void> {
         process.exit(1);
     }
 
-    let connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    let connectionString = process.env.POSTGRES_URL_POSTGRES_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL_POSTGRES_PRISMA_URL;
     if (!connectionString) {
         const dbUser = process.env.DB_USER || 'postgres';
         const dbPassword = process.env.DB_PASSWORD || 'postgres';
