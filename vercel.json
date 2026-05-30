@@ -4,6 +4,8 @@
     { "src": "src/server.ts", "use": "@vercel/node" },
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "logo.jpg", "use": "@vercel/static" },
+    { "src": "manifest.json", "use": "@vercel/static" },
+    { "src": "sw.js", "use": "@vercel/static" },
     { "src": "Admin/admin.html", "use": "@vercel/static" },
     { "src": "styles/**", "use": "@vercel/static" },
     { "src": "scripts/**", "use": "@vercel/static" },
@@ -12,6 +14,8 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "src/server.ts" },
     { "src": "/logo.jpg", "dest": "logo.jpg" },
+    { "src": "/manifest.json", "dest": "manifest.json" },
+    { "src": "/sw.js", "dest": "sw.js" },
     { "src": "/admin", "dest": "Admin/admin.html" },
     { "src": "/Admin/admin.html", "dest": "Admin/admin.html" },
     { "src": "/styles/(.*)", "dest": "styles/$1" },

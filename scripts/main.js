@@ -5,6 +5,15 @@
 
 const API_URL = '/api';
 
+// ==================== Service Worker (PWA) ====================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('ServiceWorker registered!'))
+            .catch(err => console.log('ServiceWorker failed: ', err));
+    });
+}
+
 // ==================== Mobile Menu ====================
 const hamburger = document.getElementById('hamburger');
 const navMenu = document.querySelector('.nav-menu');
