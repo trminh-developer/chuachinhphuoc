@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Chùa Chính Phước</title>
+    <link rel="shortcut icon" href="../Logo pagoda.jpg" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles/admin.css">
 </head>
@@ -33,7 +34,7 @@
     <!-- Dashboard Section -->
     <div class="admin-dashboard" id="adminDashboard">
         <div class="dashboard-header">
-            <h1>Bảng Quản Lý</h1>
+            <h1>Adminstrator</h1>
             <button class="logout-btn" onclick="logout()">Đăng Xuất</button>
         </div>
 
@@ -61,6 +62,10 @@
                             <div class="form-group">
                                 <label for="eventTitle">Tiêu Đề</label>
                                 <input type="text" id="eventTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventImageUrl">URL Hình Ảnh (tùy chọn)</label>
+                                <input type="text" id="eventImageUrl" placeholder="https://...">
                             </div>
                             <div class="form-group">
                                 <label for="eventCategory">Danh Mục</label>

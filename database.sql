@@ -45,10 +45,11 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'event
 BEGIN
     CREATE TABLE events (
         id              INT             PRIMARY KEY IDENTITY(1,1),
-        event_date      VARCHAR(10)     NOT NULL,           -- Format: DD/MM
+        event_date      VARCHAR(10)     NOT NULL,           -- Format: DD/MM/YYYY
         title           NVARCHAR(255)   NOT NULL,
         description     NVARCHAR(MAX)   NOT NULL,
         category        NVARCHAR(50)    NOT NULL,           -- Lễ hội, Tu tập, Giảng dạy, etc.
+        image_url       VARCHAR(MAX)    NULL,
         created_at      DATETIME        DEFAULT GETDATE(),
         updated_at      DATETIME        DEFAULT GETDATE()
     );

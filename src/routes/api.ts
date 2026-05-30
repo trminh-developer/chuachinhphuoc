@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import {
     getEvents, addEvent, updateEvent, deleteEvent,
+    getEventById,
     getGalleryItems, addGalleryItem, updateGalleryItem, deleteGalleryItem,
     saveContact, getContacts, deleteContact,
     createAdmin, getAdminByUsername
@@ -106,13 +107,31 @@ router.get('/events', async (req: Request, res: Response) => {
         sendResponse(res, 200, true, events, 'Lấy danh sách hoạt động thành công');
     } catch (error: any) {
         console.error('❌ Error fetching events:', error);
-        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi tải hoạt động');
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi tải danh sách hoạt động');
+    }
+});
+
+router.get('/events/:id', async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id) || id <= 0) {
+            return sendResponse(res, 400, false, undefined, undefined, 'ID không hợp lệ');
+        }
+
+        const event = await getEventById(id);
+        if (!event) {
+            return sendResponse(res, 404, false, undefined, undefined, 'Không tìm thấy hoạt động');
+        }
+        sendResponse(res, 200, true, event, 'Lấy chi tiết hoạt động thành công');
+    } catch (error: any) {
+        console.error('❌ Error fetching event by ID:', error);
+        sendResponse(res, 500, false, undefined, undefined, error.message || 'Lỗi tải chi tiết hoạt động');
     }
 });
 
 router.post('/events', authenticateAdmin, async (req: AuthRequest, res: Response) => {
     try {
-        const { date, title, description, category } = req.body;
+        const { date, title, description, category, imageUrl } = req.body;
 
         if (!date || !title || !description || !category) {
             return sendResponse(res, 400, false, undefined, undefined, 'Thiếu thông tin: date, title, description, category');
@@ -124,7 +143,7 @@ router.post('/events', authenticateAdmin, async (req: AuthRequest, res: Response
             return sendResponse(res, 400, false, undefined, undefined, 'Định dạng ngày phải là DD/MM/YYYY (vd: 01/01/2026)');
         }
 
-        const eventId = await addEvent(date.trim(), title.trim(), description.trim(), category.trim());
+        const eventId = await addEvent(date.trim(), title.trim(), description.trim(), category.trim(), imageUrl?.trim());
         sendResponse(res, 201, true, { id: eventId }, 'Thêm hoạt động thành công');
     } catch (error: any) {
         console.error('❌ Error creating event:', error);
@@ -139,7 +158,7 @@ router.put('/events/:id', authenticateAdmin, async (req: AuthRequest, res: Respo
             return sendResponse(res, 400, false, undefined, undefined, 'ID không hợp lệ');
         }
 
-        const { date, title, description, category } = req.body;
+        const { date, title, description, category, imageUrl } = req.body;
         if (!date || !title || !description || !category) {
             return sendResponse(res, 400, false, undefined, undefined, 'Thiếu thông tin: date, title, description, category');
         }
@@ -149,7 +168,7 @@ router.put('/events/:id', authenticateAdmin, async (req: AuthRequest, res: Respo
             return sendResponse(res, 400, false, undefined, undefined, 'Định dạng ngày phải là DD/MM/YYYY');
         }
 
-        const updated = await updateEvent(id, date.trim(), title.trim(), description.trim(), category.trim());
+        const updated = await updateEvent(id, date.trim(), title.trim(), description.trim(), category.trim(), imageUrl?.trim());
         if (!updated) {
             return sendResponse(res, 404, false, undefined, undefined, 'Không tìm thấy hoạt động');
         }

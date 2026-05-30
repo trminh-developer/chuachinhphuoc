@@ -11,9 +11,10 @@ let audios = [];
 // XSS Protection
 // =============================================================================
 function escapeHtml(text) {
-    if (!text || typeof text !== 'string') return '';
+    if (text === null || text === undefined) return '';
+    const str = String(text);
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = str;
     return div.innerHTML;
 }
 
@@ -115,6 +116,7 @@ document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
     const title = document.getElementById('eventTitle')?.value.trim();
     const description = document.getElementById('eventDescription')?.value.trim();
     const category = document.getElementById('eventCategory')?.value.trim();
+    const imageUrl = document.getElementById('eventImageUrl')?.value.trim();
 
     if (!date || !title || !description || !category) {
         alert('Vui lòng điền đầy đủ thông tin.');
@@ -133,7 +135,7 @@ document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
         
         const response = await authFetch(url, {
             method: method,
-            body: JSON.stringify({ date, title, description, category })
+            body: JSON.stringify({ date, title, description, category, imageUrl })
         });
 
         const data = await response.json();
@@ -193,20 +195,26 @@ async function loadEvents() {
             return;
         }
 
-        list.innerHTML = data.data.map(event => `
+        list.innerHTML = data.data.map(event => {
+            let shortDesc = event.description || '';
+            if (shortDesc.length > 120) {
+                shortDesc = shortDesc.substring(0, 120) + '...';
+            }
+            return `
             <div class="item-card">
+                ${event.image_url ? `<img class="img-preview" src="${escapeHtml(event.image_url)}" alt="${escapeHtml(event.title)}" onerror="this.onerror=null; this.src='https://via.placeholder.com/300?text=L%E1%BB%97i+%E1%BA%A3nh'">` : ''}
                 <span class="item-badge">${escapeHtml(event.category)}</span>
                 <div class="item-title">${escapeHtml(event.title)}</div>
                 <div class="item-desc">
                     <strong>Ngày:</strong> ${escapeHtml(event.event_date)}<br>
-                    ${escapeHtml(event.description)}
+                    ${escapeHtml(shortDesc)}
                 </div>
                 <div class="item-actions">
-                    <button class="btn-edit" onclick="editEvent(${event.id}, '${escapeHtml(event.event_date)}', '${escapeHtml(event.title)}', '${escapeHtml(event.category)}', '${escapeHtml(event.description).replace(/'/g, "\\'")}')">✏️ Sửa</button>
+                    <button class="btn-edit" onclick="editEvent(${event.id}, '${escapeHtml(event.event_date)}', '${escapeHtml(event.title)}', '${escapeHtml(event.category)}', '${escapeHtml(event.description).replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "")}', '${escapeHtml(event.image_url || '')}')">✏️ Sửa</button>
                     <button class="btn-delete" onclick="deleteEvent(${event.id})">🗑️ Xóa</button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } catch (error) {
         console.error('❌ Error loading events:', error);
         const list = document.getElementById('eventsList');
@@ -216,12 +224,13 @@ async function loadEvents() {
     }
 }
 
-function editEvent(id, date, title, category, description) {
+function editEvent(id, date, title, category, description, imageUrl) {
     document.getElementById('eventId').value = id;
     document.getElementById('eventDate').value = date;
     document.getElementById('eventTitle').value = title;
     document.getElementById('eventCategory').value = category;
     document.getElementById('eventDescription').value = description;
+    document.getElementById('eventImageUrl').value = imageUrl || '';
     
     document.getElementById('eventFormTitle').innerText = 'Cập Nhật Hoạt Động';
     document.getElementById('eventSubmitBtn').innerText = 'Lưu Thay Đổi';

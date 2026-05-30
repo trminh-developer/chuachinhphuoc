@@ -22,11 +22,12 @@ if (hamburger) {
     });
 }
 
-// ==================== XSS Protection ====================
+// ==================== Utilities ====================
 function escapeHtml(text) {
-    if (!text) return '';
+    if (text === null || text === undefined) return '';
+    const str = String(text);
     const div = document.createElement('div');
-    div.textContent = String(text);
+    div.textContent = str;
     return div.innerHTML;
 }
 
@@ -86,16 +87,38 @@ async function loadEvents() {
 
         eventsContainer.innerHTML = '';
         result.data.forEach(event => {
-            const eventCard = document.createElement('div');
+            const eventCard = document.createElement('a');
+            eventCard.href = `event.html?id=${event.id}`;
             eventCard.className = 'event-card';
+            eventCard.style.textDecoration = 'none';
+            eventCard.style.color = 'inherit';
+            eventCard.style.display = 'flex';
+            eventCard.style.flexDirection = 'column';
+
+            // Truncate description to 100 characters
+            let shortDesc = event.description || '';
+            if (shortDesc.length > 100) {
+                shortDesc = shortDesc.substring(0, 100) + '...';
+            }
+
+            // Fallback header: image if exists, else date banner
+            const headerHtml = event.image_url 
+                ? `<div class="event-image-header" style="height: 200px; position: relative; border-radius: 8px 8px 0 0; overflow: hidden; background-color: #2c3e2a;">
+                       <img src="${escapeHtml(event.image_url)}" alt="Event Image" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1548625361-ec85303c7348?q=80&w=600&auto=format&fit=crop';">
+                       <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold;">
+                           ${escapeHtml(event.event_date)}
+                       </div>
+                   </div>`
+                : `<div class="event-date">${escapeHtml(event.event_date)}</div>`;
+
             eventCard.innerHTML = `
-                <div class="event-date">${escapeHtml(event.event_date)}</div>
-                <div class="event-content">
+                ${headerHtml}
+                <div class="event-content" style="flex: 1; display: flex; flex-direction: column;">
                     <h3 class="event-title">${escapeHtml(event.title)}</h3>
-                    <p class="event-description">${escapeHtml(event.description)}</p>
+                    <p class="event-description" style="flex: 1;">${escapeHtml(shortDesc)}</p>
                     <div class="event-footer">
                         <span class="event-category">${escapeHtml(event.category)}</span>
-                        <a href="#" class="event-link">Xem chi tiết →</a>
+                        <span class="event-link">Xem chi tiết →</span>
                     </div>
                 </div>
             `;

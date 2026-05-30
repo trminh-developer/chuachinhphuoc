@@ -12,6 +12,7 @@ export interface EventRecord {
     title: string;
     description: string;
     category: string;
+    image_url?: string;
     created_at: Date;
     updated_at?: Date;
 }
@@ -199,7 +200,7 @@ export async function getEvents(): Promise<EventRecord[]> {
         const p = await getPool();
         const result = await p
             .request()
-            .query('SELECT id, event_date, title, description, category, created_at FROM events ORDER BY created_at DESC');
+            .query('SELECT id, event_date, title, description, category, image_url, created_at FROM events ORDER BY created_at DESC');
         return result.recordset;
     } catch (error) {
         console.error('❌ Error fetching events:', error);
@@ -207,7 +208,21 @@ export async function getEvents(): Promise<EventRecord[]> {
     }
 }
 
-export async function addEvent(date: string, title: string, description: string, category: string): Promise<number> {
+export async function getEventById(id: number): Promise<EventRecord | null> {
+    try {
+        const p = await getPool();
+        const result = await p
+            .request()
+            .input('id', sql.Int, id)
+            .query('SELECT id, event_date, title, description, category, image_url, created_at FROM events WHERE id = @id');
+        return result.recordset.length > 0 ? result.recordset[0] : null;
+    } catch (error) {
+        console.error('❌ Error fetching event by ID:', error);
+        throw new Error(`Failed to fetch event by ID: ${(error as Error).message}`);
+    }
+}
+
+export async function addEvent(date: string, title: string, description: string, category: string, imageUrl?: string): Promise<number> {
     try {
         const p = await getPool();
         const result = await p
@@ -216,10 +231,11 @@ export async function addEvent(date: string, title: string, description: string,
             .input('title', sql.NVarChar(255), title)
             .input('description', sql.NVarChar(sql.MAX), description)
             .input('category', sql.NVarChar(50), category)
+            .input('image_url', sql.VarChar(sql.MAX), imageUrl || null)
             .query(`
-                INSERT INTO events (event_date, title, description, category) 
+                INSERT INTO events (event_date, title, description, category, image_url) 
                 OUTPUT INSERTED.id 
-                VALUES (@event_date, @title, @description, @category)
+                VALUES (@event_date, @title, @description, @category, @image_url)
             `);
         return result.recordset[0].id;
     } catch (error) {
@@ -228,7 +244,7 @@ export async function addEvent(date: string, title: string, description: string,
     }
 }
 
-export async function updateEvent(id: number, date: string, title: string, description: string, category: string): Promise<boolean> {
+export async function updateEvent(id: number, date: string, title: string, description: string, category: string, imageUrl?: string): Promise<boolean> {
     try {
         const p = await getPool();
         const result = await p
@@ -238,10 +254,11 @@ export async function updateEvent(id: number, date: string, title: string, descr
             .input('title', sql.NVarChar(255), title)
             .input('description', sql.NVarChar(sql.MAX), description)
             .input('category', sql.NVarChar(50), category)
+            .input('image_url', sql.VarChar(sql.MAX), imageUrl || null)
             .query(`
                 UPDATE events 
                 SET event_date = @event_date, title = @title, description = @description, 
-                    category = @category, updated_at = GETDATE() 
+                    category = @category, image_url = @image_url, updated_at = GETDATE() 
                 WHERE id = @id
             `);
         return result.rowsAffected[0] > 0;
