@@ -74,6 +74,7 @@
                             <div class="form-group">
                                 <label for="eventImageFile">Tải Lên Hình Ảnh</label>
                                 <input type="file" id="eventImageFile" accept="image/*" style="padding: 8px 0;">
+                                <div id="eventImagePreview" style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;"></div>
                                 <small style="color: #666; font-size: 0.85rem; margin-top: 4px; display: block;">Chọn file từ máy tính hoặc dán URL vào bên dưới</small>
                             </div>
                             <div class="form-group">
@@ -112,12 +113,13 @@
                         <form id="galleryForm">
                             <input type="hidden" id="galleryId">
                             <div class="form-group">
-                                <label for="imageFiles">Tải Lên Hình Ảnh (Nhiều file cùng lúc)</label>
+                                <label for="imageFiles">Tải Lên Hình Ảnh</label>
                                 <input type="file" id="imageFiles" accept="image/*" multiple style="padding: 8px 0;">
+                                <div id="galleryImagePreview" style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;"></div>
                                 <small style="color: #666; font-size: 0.85rem; margin-top: 4px; display: block;">Hỗ trợ ảnh chất lượng cao. Nếu chọn nhiều ảnh, tiêu đề sẽ tự động lấy tên file (bạn có thể sửa lại sau).</small>
                             </div>
                             <div class="form-group">
-                                <label for="imageUrl">Hoặc nhập URL Hình Ảnh (Nếu có)</label>
+                                <label for="imageUrl">Hoặc nhập URL Hình Ảnh</label>
                                 <input type="text" id="imageUrl" placeholder="https://...">
                             </div>
                             <div class="form-group">
@@ -144,9 +146,10 @@
                         <form id="audioForm">
                             <input type="hidden" id="audioId">
                             <div class="form-group">
-                                <label for="audioFile">Tải Lên Tệp Âm Thanh</label>
+                                <label for="audioFile">Tải Lên Âm Thanh</label>
                                 <input type="file" id="audioFile" accept="audio/*" style="padding: 8px 0;">
-                                <small style="color: #666; font-size: 0.85rem; margin-top: 4px; display: block;">Hỗ trợ MP3, WAV. Không giới hạn thời lượng.</small>
+                                <div id="audioFilePreview" style="margin-top: 10px;"></div>
+                                <small style="color: #666; font-size: 0.85rem; display: block;">Tải lên file MP3, WAV...</small>
                             </div>
                             <div class="form-group">
                                 <label for="audioUrl">Hoặc URL Tệp Âm Thanh</label>

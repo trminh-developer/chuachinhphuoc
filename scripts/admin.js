@@ -164,6 +164,66 @@ async function uploadToSupabase(file, progressCallback = null) {
 }
 
 // =============================================================================
+// Preview Image selected from input file
+// =============================================================================
+function handleImagePreview(inputId, previewContainerId) {
+    const input = document.getElementById(inputId);
+    const container = document.getElementById(previewContainerId);
+    if (!input || !container) return;
+
+    input.addEventListener('change', (e) => {
+        container.innerHTML = ''; // Clear old preview
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        Array.from(files).forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '100px';
+                img.style.height = '100px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '4px';
+                img.style.border = '1px solid #ccc';
+                container.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+}
+
+function handleAudioPreview(inputId, previewContainerId) {
+    const input = document.getElementById(inputId);
+    const container = document.getElementById(previewContainerId);
+    if (!input || !container) return;
+
+    input.addEventListener('change', (e) => {
+        container.innerHTML = '';
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+        if (!file.type.startsWith('audio/')) return;
+        
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = URL.createObjectURL(file);
+        audio.style.width = '100%';
+        container.appendChild(audio);
+    });
+}
+
+// Gọi hàm preview cho Event và Gallery
+document.addEventListener('DOMContentLoaded', () => {
+    handleImagePreview('eventImageFile', 'eventImagePreview');
+    handleImagePreview('imageFiles', 'galleryImagePreview');
+    handleAudioPreview('audioFile', 'audioFilePreview');
+});
+
+// =============================================================================
 // Events Management
 // =============================================================================
 document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
@@ -314,18 +374,21 @@ function editEvent(id, date, title, category, description, imageUrl) {
 function cancelEdit(type) {
     if (type === 'event') {
         document.getElementById('eventForm').reset();
+        document.getElementById('eventImagePreview').innerHTML = '';
         document.getElementById('eventId').value = '';
         document.getElementById('eventFormTitle').innerText = 'Thêm Hoạt Động Mới';
         document.getElementById('eventSubmitBtn').innerText = 'Thêm Hoạt Động';
         document.getElementById('eventCancelBtn').style.display = 'none';
     } else if (type === 'gallery') {
         document.getElementById('galleryForm').reset();
+        document.getElementById('galleryImagePreview').innerHTML = '';
         document.getElementById('galleryId').value = '';
         document.getElementById('galleryFormTitle').innerText = 'Thêm Hình Ảnh Mới';
         document.getElementById('gallerySubmitBtn').innerText = 'Thêm Hình Ảnh';
         document.getElementById('galleryCancelBtn').style.display = 'none';
     } else if (type === 'audio') {
         document.getElementById('audioForm').reset();
+        document.getElementById('audioFilePreview').innerHTML = '';
         document.getElementById('audioId').value = '';
         document.getElementById('audioFormTitle').innerText = 'Thêm Âm Thanh Mới';
         document.getElementById('audioSubmitBtn').innerText = 'Thêm Âm Thanh';
