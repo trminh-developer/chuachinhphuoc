@@ -1,4 +1,4 @@
-import sql, { ConnectionPool } from 'mssql/msnodesqlv8';
+import sql, { ConnectionPool } from 'mssql';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -46,16 +46,25 @@ export interface AdminRecord {
 }
 
 // =============================================================================
-// Connection Pool Configuration (msnodesqlv8 — Shared Memory / Named Pipes)
+// Connection Pool Configuration (Cloud Compatible - Tedious)
 // =============================================================================
 let pool: ConnectionPool | null = null;
 let poolConnecting: Promise<ConnectionPool> | null = null;
 
 const dbServer = process.env.DB_HOST || 'localhost';
 const dbName = process.env.DB_NAME || 'pagoda_website';
+const dbUser = process.env.DB_USER || 'sa';
+const dbPassword = process.env.DB_PASSWORD || '';
 
 const sqlConfig: any = {
-    connectionString: `Driver={ODBC Driver 17 for SQL Server};Server=${dbServer};Database=${dbName};Trusted_Connection=Yes;`,
+    user: dbUser,
+    password: dbPassword,
+    server: dbServer,
+    database: dbName,
+    options: {
+        encrypt: true, // true for cloud (Vercel/Azure)
+        trustServerCertificate: true // true for local dev
+    },
     pool: {
         min: 2,
         max: 10,
