@@ -6,6 +6,7 @@
     { "src": "googledca5cf6bdd3e460e.html", "use": "@vercel/static" },
     { "src": "event.html", "use": "@vercel/static" },
     { "src": "logo.jpg", "use": "@vercel/static" },
+    { "src": "sanchua.png", "use": "@vercel/static" },
     { "src": "manifest.json", "use": "@vercel/static" },
     { "src": "manifest-admin.json", "use": "@vercel/static" },
     { "src": "sw.js", "use": "@vercel/static" },
@@ -17,6 +18,7 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "src/server.ts" },
     { "src": "/logo.jpg", "dest": "logo.jpg" },
+    { "src": "/sanchua.png", "dest": "sanchua.png" },
     { "src": "/manifest.json", "dest": "manifest.json" },
     { "src": "/manifest-admin.json", "dest": "manifest-admin.json" },
     { "src": "/sw.js", "dest": "sw.js" },
