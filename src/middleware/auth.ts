@@ -15,7 +15,7 @@ export function generateToken(adminId: number, username: string): string {
 export function verifyToken(token: string): any {
     try {
         return jwt.verify(token, JWT_SECRET);
-    } catch (error) {
+    } catch {
         return null;
     }
 }
@@ -24,14 +24,14 @@ export function authenticateAdmin(req: AuthRequest, res: Response, next: NextFun
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, error: 'No token provided' });
+        return res.status(401).json({ success: false, error: 'Không có token xác thực' });
     }
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
 
     if (!decoded) {
-        return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+        return res.status(401).json({ success: false, error: 'Token không hợp lệ hoặc đã hết hạn' });
     }
 
     req.adminId = decoded.adminId;

@@ -1,9 +1,9 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import sql from 'mssql';
 import dotenv from 'dotenv';
-import apiRoutes from './routes/api';
 import path from 'path';
+import apiRoutes from './routes/api';
+import { initDatabase } from './database';
 
 dotenv.config();
 
@@ -13,39 +13,20 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
 
-// Database configuration for SQL Server
-const sqlConfig = {
-    server: process.env.DB_HOST || 'localhost',
-    authentication: {
-        type: 'default',
-        options: {
-            userName: process.env.DB_USER || 'sa',
-            password: process.env.DB_PASSWORD || ''
-        }
-    },
-    options: {
-        database: process.env.DB_NAME || 'chuachinhphuoc',
-        trustServerCertificate: true,
-        encrypt: true,
-        connectionTimeout: 15000,
-    }
-};
+// Serve static files from project root
+app.use(express.static(path.join(__dirname, '..')));
+// Serve assets from public/
+app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
 
-export const dbPool = sql;
-
-
-// Routes
+// API Routes
 app.use('/api', apiRoutes);
 
-// Root route
+// Page routes
 app.get('/', (req: Request, res: Response) => {
-    // Sử dụng path.join và __dirname để trỏ chính xác ra thư mục chứa index.html
     res.sendFile(path.join(__dirname, '../index.html'));
 });
 
-// Admin route
 app.get('/admin', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, '../Admin/admin.html'));
 });
@@ -63,13 +44,18 @@ app.use((req: Request, res: Response) => {
 
 // Start server
 async function start() {
-    app.listen(PORT, () => {
-        console.log(`🙏 Chùa Chính Phước server running on port ${PORT}`);
-    });
+    try {
+        await initDatabase();
+        app.listen(PORT, () => {
+            console.log(`🙏 Chùa Chính Phước server running on http://localhost:${PORT}`);
+            console.log(`   Admin panel: http://localhost:${PORT}/admin`);
+        });
+    } catch (error) {
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
+    }
 }
-start().catch(error => {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-});
+
+start();
 
 export default app;
