@@ -259,12 +259,6 @@ body {
 }
 
 @media (max-width: 768px) {
-    .nav-menu {
-        transform: translateX(100%);
-        transition: var(--transition);
-        padding: 2rem;
-    }
-
     .nav-search {
         margin: 1rem 0;
         width: 100%;
