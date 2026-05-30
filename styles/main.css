@@ -738,6 +738,12 @@ body {
 
 /* ==================== Mobile Responsive ==================== */
 @media (max-width: 768px) {
+    /* Sửa lỗi ảnh nền bị phóng to/xám xịt trên iOS Safari */
+    .hero-background {
+        background-attachment: scroll;
+        background-position: center top;
+    }
+    
     .hamburger {
         display: flex;
     }
