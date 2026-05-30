@@ -47,6 +47,8 @@ const API_URL = '/api';
             const defaultImage = 'https://images.unsplash.com/photo-1548625361-ec85303c7348?q=80&w=2070&auto=format&fit=crop';
             const bgImage = event.image_url ? normalizeImageUrl(event.image_url) : defaultImage;
 
+            document.title = `${event.title}`;
+
             const urls = event.image_url ? event.image_url.split(',').map(u => u.trim()).filter(u => u.startsWith('http')) : [];
             let galleryHtml = '';
             if (urls.length > 1) {
