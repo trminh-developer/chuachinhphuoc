@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Vượt qua lỗi Self-Signed Certificate của Supabase
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // =============================================================================
 // TypeScript Interfaces
 // =============================================================================
@@ -80,6 +83,7 @@ export async function getPool(): Promise<Pool> {
                     max: 10,
                     idleTimeoutMillis: 30000,
                     connectionTimeoutMillis: 10000,
+                    ssl: !connectionString.includes('localhost') ? { rejectUnauthorized: false } : undefined
                 });
 
                 // Test connection

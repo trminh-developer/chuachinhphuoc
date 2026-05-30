@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Vượt qua lỗi Self-Signed Certificate của Supabase
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 async function createAdmin(): Promise<void> {
     const username = process.argv[2];
     const email = process.argv[3];
@@ -33,6 +36,7 @@ async function createAdmin(): Promise<void> {
         connectionString,
         max: 3,
         idleTimeoutMillis: 10000,
+        ssl: !connectionString.includes('localhost') ? { rejectUnauthorized: false } : undefined
     });
 
     try {
