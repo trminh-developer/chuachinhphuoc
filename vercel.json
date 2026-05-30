@@ -3,6 +3,7 @@
   "builds": [
     { "src": "src/server.ts", "use": "@vercel/node" },
     { "src": "index.html", "use": "@vercel/static" },
+    { "src": "Logo pagoda.jpg", "use": "@vercel/static" },
     { "src": "Admin/admin.html", "use": "@vercel/static" },
     { "src": "styles/**", "use": "@vercel/static" },
     { "src": "scripts/**", "use": "@vercel/static" },
@@ -10,6 +11,7 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "src/server.ts" },
+    { "src": "/Logo pagoda.jpg", "dest": "Logo pagoda.jpg" },
     { "src": "/admin", "dest": "Admin/admin.html" },
     { "src": "/Admin/admin.html", "dest": "Admin/admin.html" },
     { "src": "/styles/(.*)", "dest": "styles/$1" },
