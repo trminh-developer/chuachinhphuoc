@@ -31,6 +31,34 @@ if (hamburger) {
     });
 }
 
+// ==================== Search Functionality ====================
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+
+function performSearch() {
+    const query = searchInput.value.trim();
+    if (!query) return;
+    
+    // Đặt lại con trỏ tìm kiếm về đầu trang nếu muốn tìm từ đầu
+    // Tuy nhiên window.find sẽ tự động tìm tiếp nếu gọi lại nhiều lần
+    const found = window.find(query, false, false, true, false, false, false);
+    
+    if (!found) {
+        alert('Không tìm thấy kết quả cho: ' + query);
+        // Reset selection if not found
+        window.getSelection().removeAllRanges();
+    }
+}
+
+if (searchBtn && searchInput) {
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+}
+
 function normalizeImageUrl(url) {
     if (!url) return '/logo.jpg';
     const firstUrl = url.split(',')[0].trim();
