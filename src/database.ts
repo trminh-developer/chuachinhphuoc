@@ -73,8 +73,12 @@ export async function getPool(): Promise<Pool> {
                     connectionString = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
                 }
 
-                // Append sslmode=require for remote connections if needed
-                if (!connectionString.includes('localhost') && !connectionString.includes('sslmode')) {
+                const isVercel = process.env.VERCEL === '1';
+                
+                // Thay thế sslmode=require bằng sslmode=no-verify nếu đang ở localhost/dev
+                if (!isVercel && connectionString.includes('sslmode=require')) {
+                    connectionString = connectionString.replace('sslmode=require', 'sslmode=no-verify');
+                } else if (!connectionString.includes('localhost') && !connectionString.includes('sslmode')) {
                     connectionString += (connectionString.includes('?') ? '&' : '?') + 'sslmode=require';
                 }
 
@@ -83,7 +87,7 @@ export async function getPool(): Promise<Pool> {
                     max: 10,
                     idleTimeoutMillis: 30000,
                     connectionTimeoutMillis: 10000,
-                    ssl: !connectionString.includes('localhost') ? { rejectUnauthorized: false } : undefined
+                    ssl: !isVercel ? { rejectUnauthorized: false } : undefined
                 });
 
                 // Test connection
