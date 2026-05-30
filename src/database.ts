@@ -74,12 +74,8 @@ export async function getPool(): Promise<Pool> {
 
                 const isVercel = process.env.VERCEL === '1';
                 
-                // Thay thế sslmode=require bằng sslmode=no-verify nếu đang ở localhost/dev
-                if (!isVercel && connectionString.includes('sslmode=require')) {
-                    connectionString = connectionString.replace('sslmode=require', 'sslmode=no-verify');
-                } else if (!connectionString.includes('localhost') && !connectionString.includes('sslmode')) {
-                    connectionString += (connectionString.includes('?') ? '&' : '?') + 'sslmode=require';
-                }
+                // Loại bỏ sslmode từ connection string để cấu hình ssl thủ công bên dưới được áp dụng
+                connectionString = connectionString.replace(/(\?|&)sslmode=[^&]+/, '');
 
                 pool = new Pool({
                     connectionString,
