@@ -1,0 +1,17 @@
+{
+  "name": "Admin Chính Phước",
+  "short_name": "Admin",
+  "description": "Trang Quản trị Chùa Chính Phước",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#F9F9F7",
+  "theme_color": "#2C3E30",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
