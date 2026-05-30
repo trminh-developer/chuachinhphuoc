@@ -3,6 +3,7 @@
   "builds": [
     { "src": "src/server.ts", "use": "@vercel/node" },
     { "src": "index.html", "use": "@vercel/static" },
+    { "src": "event.html", "use": "@vercel/static" },
     { "src": "logo.jpg", "use": "@vercel/static" },
     { "src": "manifest.json", "use": "@vercel/static" },
     { "src": "manifest-admin.json", "use": "@vercel/static" },
@@ -20,6 +21,7 @@
     { "src": "/sw.js", "dest": "sw.js" },
     { "src": "/admin", "dest": "Admin/admin.html" },
     { "src": "/Admin/admin.html", "dest": "Admin/admin.html" },
+    { "src": "/event.html", "dest": "event.html" },
     { "src": "/styles/(.*)", "dest": "styles/$1" },
     { "src": "/scripts/(.*)", "dest": "scripts/$1" },
     { "src": "/public/(.*)", "dest": "public/$1" },
