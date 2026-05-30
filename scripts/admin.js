@@ -21,11 +21,11 @@ if ('serviceWorker' in navigator) {
 // =============================================================================
 function normalizeImageUrl(url) {
     if (!url) return '/logo.jpg';
-    const trimmed = url.trim();
-    if (!trimmed.startsWith('http')) {
+    const firstUrl = url.split(',')[0].trim();
+    if (!firstUrl.startsWith('http')) {
         return '/logo.jpg';
     }
-    return escapeHtml(trimmed);
+    return escapeHtml(firstUrl);
 }
 
 function escapeHtml(text) {
@@ -262,10 +262,17 @@ document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
 
     try {
         if (fileInput && fileInput.files.length > 0) {
-            submitBtn.innerText = 'Đang tải ảnh lên (0%)...';
-            imageUrl = await uploadToSupabase(fileInput.files[0], (percent) => {
-                submitBtn.innerText = `Đang tải ảnh lên (${percent}%)...`;
-            });
+            let uploadedUrls = [];
+            for (let i = 0; i < fileInput.files.length; i++) {
+                submitBtn.innerText = `Đang tải ảnh ${i+1}/${fileInput.files.length} (0%)...`;
+                const url = await uploadToSupabase(fileInput.files[i], (percent) => {
+                    submitBtn.innerText = `Đang tải ảnh ${i+1}/${fileInput.files.length} (${percent}%)...`;
+                });
+                uploadedUrls.push(url);
+            }
+            // Nếu trước đó đã có ảnh (sửa sự kiện), có thể giữ ảnh cũ và thêm ảnh mới, hoặc ghi đè.
+            // Ở đây ghi đè toàn bộ bằng ảnh mới upload.
+            imageUrl = uploadedUrls.join(',');
         } else if (imageUrl) {
             if (imageUrl.toLowerCase().startsWith('c:\\') || imageUrl.toLowerCase().startsWith('file://') || imageUrl.toLowerCase().startsWith('d:\\') || !imageUrl.toLowerCase().startsWith('http')) {
                 alert('❌ Lỗi: Đường dẫn ảnh không hợp lệ (Không dùng đường dẫn máy tính cục bộ). Vui lòng Tải file lên hoặc nhập URL bắt đầu bằng http/https!');
@@ -380,6 +387,14 @@ function editEvent(id, date, title, category, description, imageUrl) {
     document.getElementById('eventDescription').value = description;
     document.getElementById('eventImageUrl').value = imageUrl || '';
     
+    const previewContainer = document.getElementById('eventImagePreview');
+    if (imageUrl) {
+        const urls = imageUrl.split(',');
+        previewContainer.innerHTML = urls.map(url => `<img src="${normalizeImageUrl(url)}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; margin-right: 5px;">`).join('');
+    } else {
+        previewContainer.innerHTML = '';
+    }
+
     document.getElementById('eventFormTitle').innerText = 'Cập Nhật Hoạt Động';
     document.getElementById('eventSubmitBtn').innerText = 'Lưu Thay Đổi';
     document.getElementById('eventCancelBtn').style.display = 'inline-block';
@@ -599,14 +614,14 @@ document.getElementById('audioForm')?.addEventListener('submit', async (e) => {
     const title = document.getElementById('audioTitle')?.value.trim();
     const description = document.getElementById('audioDescription')?.value.trim();
 
-    const file = fileInput ? fileInput.files[0] : null;
+    const files = fileInput ? fileInput.files : [];
 
-    if (!url && !file) {
+    if (!url && files.length === 0) {
         alert('Vui lòng chọn file âm thanh hoặc nhập URL.');
         return;
     }
     
-    if (!title) {
+    if (files.length === 0 && !title) {
         alert('Vui lòng nhập tiêu đề.');
         return;
     }
@@ -616,29 +631,51 @@ document.getElementById('audioForm')?.addEventListener('submit', async (e) => {
     submitBtn.innerText = 'Đang xử lý...';
 
     try {
-        if (file) {
-            submitBtn.innerText = 'Đang tải âm thanh (0%)...';
-            url = await uploadToSupabase(file, (percent) => {
-                submitBtn.innerText = `Đang tải âm thanh (${percent}%)...`;
-            });
-        }
+        if (files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                submitBtn.innerText = `Đang tải âm thanh ${i+1}/${files.length} (0%)...`;
+                const uploadedUrl = await uploadToSupabase(file, (percent) => {
+                    submitBtn.innerText = `Đang tải âm thanh ${i+1}/${files.length} (${percent}%)...`;
+                });
+                
+                let itemTitle = title;
+                if (!itemTitle || files.length > 1) {
+                    itemTitle = file.name.replace(/\.[^/.]+$/, ""); // Lấy tên file làm tiêu đề
+                }
 
-        if (id) {
-            // Update
-            const index = audios.findIndex(a => a.id.toString() === id);
-            if (index !== -1) {
-                audios[index].url = url;
-                audios[index].title = title;
-                audios[index].description = description || '';
+                if (id && i === 0) {
+                    const index = audios.findIndex(a => a.id.toString() === id);
+                    if (index !== -1) {
+                        audios[index].url = uploadedUrl;
+                        audios[index].title = itemTitle;
+                        audios[index].description = description || '';
+                    }
+                } else {
+                    audios.push({
+                        id: Date.now() + i,
+                        url: uploadedUrl,
+                        title: itemTitle,
+                        description: description || ''
+                    });
+                }
             }
         } else {
-            // Create
-            audios.push({
-                id: Date.now(),
-                url: url,
-                title: title,
-                description: description || ''
-            });
+            if (id) {
+                const index = audios.findIndex(a => a.id.toString() === id);
+                if (index !== -1) {
+                    audios[index].url = url;
+                    audios[index].title = title;
+                    audios[index].description = description || '';
+                }
+            } else {
+                audios.push({
+                    id: Date.now(),
+                    url: url,
+                    title: title,
+                    description: description || ''
+                });
+            }
         }
         
         localStorage.setItem('audios', JSON.stringify(audios));

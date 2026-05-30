@@ -72,9 +72,11 @@
                                 <input type="text" id="eventTitle" required>
                             </div>
                             <div class="form-group">
-                                <label for="eventImageFile">Tải Lên Hình Ảnh</label>
-                                <input type="file" id="eventImageFile" accept="image/*" style="padding: 8px 0;">
-                                <div id="eventImagePreview" style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;"></div>
+                                <label for="eventImageFile">Tải Lên Hình Ảnh (Có thể chọn nhiều ảnh)</label>
+                                <input type="file" id="eventImageFile" class="form-input" accept="image/*" multiple>
+                                <div id="eventImagePreview" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;"></div>
+                            </div>
+                            <div class="form-group">
                                 <small style="color: #666; font-size: 0.85rem; margin-top: 4px; display: block;">Chọn file từ máy tính hoặc dán URL vào bên dưới</small>
                             </div>
                             <div class="form-group">
@@ -146,9 +148,9 @@
                         <form id="audioForm">
                             <input type="hidden" id="audioId">
                             <div class="form-group">
-                                <label for="audioFile">Tải Lên Âm Thanh</label>
-                                <input type="file" id="audioFile" accept="audio/*" style="padding: 8px 0;">
-                                <div id="audioFilePreview" style="margin-top: 10px;"></div>
+                                <label for="audioFile">Tải Lên Âm Thanh (Có thể chọn nhiều file)</label>
+                                <input type="file" id="audioFile" accept="audio/*" multiple style="padding: 8px 0;">
+                                <div id="audioFilePreview" style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;"></div>
                                 <small style="color: #666; font-size: 0.85rem; display: block;">Tải lên file MP3, WAV...</small>
                             </div>
                             <div class="form-group">

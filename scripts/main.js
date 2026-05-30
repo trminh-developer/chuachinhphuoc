@@ -33,11 +33,11 @@ if (hamburger) {
 
 function normalizeImageUrl(url) {
     if (!url) return '/logo.jpg';
-    const trimmed = url.trim();
-    if (!trimmed.startsWith('http')) {
-        return '/logo.jpg'; // Hoặc đường dẫn host nếu cần
+    const firstUrl = url.split(',')[0].trim();
+    if (!firstUrl.startsWith('http')) {
+        return '/logo.jpg';
     }
-    return escapeHtml(trimmed);
+    return escapeHtml(firstUrl);
 }
 
 // ==================== Utilities ====================

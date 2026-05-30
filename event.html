@@ -163,9 +163,9 @@
 
         function normalizeImageUrl(url) {
             if (!url) return '/logo.jpg';
-            const trimmed = url.trim();
-            if (!trimmed.startsWith('http')) return '/logo.jpg';
-            return escapeHtml(trimmed);
+            const firstUrl = url.split(',')[0].trim();
+            if (!firstUrl.startsWith('http')) return '/logo.jpg';
+            return escapeHtml(firstUrl);
         }
 
         function renderEvent(event) {
@@ -176,6 +176,16 @@
             const bgImage = event.image_url ? normalizeImageUrl(event.image_url) : defaultImage;
 
             document.title = `${event.title} - Chùa Chính Phước`;
+
+            const urls = event.image_url ? event.image_url.split(',').map(u => u.trim()).filter(u => u.startsWith('http')) : [];
+            let galleryHtml = '';
+            if (urls.length > 1) {
+                galleryHtml = `
+                    <div class="event-gallery" style="margin: 30px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                        ${urls.map(url => `<img src="${escapeHtml(url)}" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Hình ảnh sự kiện">`).join('')}
+                    </div>
+                `;
+            }
 
             wrapper.innerHTML = `
                 <div class="event-header" style="background-image: url('${bgImage}')">
@@ -188,8 +198,8 @@
                     </div>
                 </div>
                 <div class="event-body">
-                    <p>${escapeHtml(event.description)}</p>
-                    
+                    <p style="white-space: pre-wrap; margin-bottom: 20px;">${escapeHtml(event.description)}</p>
+                    ${galleryHtml}
                     <a href="/index.html#activities" class="back-btn">← Quay lại danh sách hoạt động</a>
                 </div>
             `;
