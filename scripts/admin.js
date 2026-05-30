@@ -116,6 +116,54 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 });
 
 // =============================================================================
+// File Upload Helper (Direct to Supabase Storage)
+// =============================================================================
+async function uploadToSupabase(file, progressCallback = null) {
+    if (!file) return null;
+    
+    // 1. Get signed upload URL from backend
+    const tokenRes = await authFetch(`${API_URL}/upload-token`, {
+        method: 'POST',
+        body: JSON.stringify({ filename: file.name })
+    });
+    const tokenData = await tokenRes.json();
+    if (!tokenData.success) {
+        throw new Error(tokenData.error || 'Lỗi lấy token upload');
+    }
+    
+    const { signedUrl, token: uploadToken, publicUrl } = tokenData.data;
+
+    // 2. Upload file directly to Supabase via PUT request using Signed URL
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', signedUrl, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${uploadToken}`);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.setRequestHeader('Cache-Control', 'max-age=3600');
+
+        if (progressCallback) {
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressCallback(percent);
+                }
+            };
+        }
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(publicUrl);
+            } else {
+                reject(new Error(`Lỗi tải lên: ${xhr.statusText}`));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error('Lỗi mạng khi tải lên'));
+        xhr.send(file);
+    });
+}
+
+// =============================================================================
 // Events Management
 // =============================================================================
 document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
@@ -125,7 +173,8 @@ document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
     const title = document.getElementById('eventTitle')?.value.trim();
     const description = document.getElementById('eventDescription')?.value.trim();
     const category = document.getElementById('eventCategory')?.value.trim();
-    const imageUrl = document.getElementById('eventImageUrl')?.value.trim();
+    const fileInput = document.getElementById('eventImageFile');
+    let imageUrl = document.getElementById('eventImageUrl')?.value.trim();
 
     if (!date || !title || !description || !category) {
         alert('Vui lòng điền đầy đủ thông tin.');
@@ -138,7 +187,18 @@ document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
         return;
     }
 
+    const submitBtn = document.getElementById('eventSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Đang xử lý...';
+
     try {
+        if (fileInput && fileInput.files.length > 0) {
+            submitBtn.innerText = 'Đang tải ảnh lên (0%)...';
+            imageUrl = await uploadToSupabase(fileInput.files[0], (percent) => {
+                submitBtn.innerText = `Đang tải ảnh lên (${percent}%)...`;
+            });
+        }
+
         const method = id ? 'PUT' : 'POST';
         const url = id ? `${API_URL}/events/${id}` : `${API_URL}/events`;
         
@@ -160,6 +220,9 @@ document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
         if (error.message === 'Token đã hết hạn') return;
         console.error('❌ Error saving event:', error);
         alert('❌ Lỗi kết nối: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = id ? 'Lưu Thay Đổi' : 'Thêm Hoạt Động';
     }
 });
 
@@ -276,37 +339,83 @@ function cancelEdit(type) {
 document.getElementById('galleryForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('galleryId')?.value;
-    const imageUrl = document.getElementById('imageUrl')?.value.trim();
-    const label = document.getElementById('imageLabel')?.value.trim();
+    const fileInput = document.getElementById('imageFiles');
+    const inputUrl = document.getElementById('imageUrl')?.value.trim();
+    const inputLabel = document.getElementById('imageLabel')?.value.trim();
     const order = parseInt(document.getElementById('imageOrder')?.value) || 0;
 
-    if (!imageUrl || !label) {
-        alert('Vui lòng điền đầy đủ thông tin.');
+    const files = fileInput ? fileInput.files : [];
+
+    if (!inputUrl && files.length === 0) {
+        alert('Vui lòng chọn file ảnh hoặc dán URL.');
+        return;
+    }
+    
+    if (files.length === 0 && !inputLabel) {
+        alert('Vui lòng nhập tiêu đề ảnh.');
         return;
     }
 
+    const submitBtn = document.getElementById('gallerySubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Đang xử lý...';
+
     try {
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `${API_URL}/gallery/${id}` : `${API_URL}/gallery`;
+        let itemsToSave = [];
 
-        const response = await authFetch(url, {
-            method: method,
-            body: JSON.stringify({ imageUrl, label, order })
-        });
+        // Nếu có chọn file upload
+        if (files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                submitBtn.innerText = `Đang tải ảnh ${i+1}/${files.length} (0%)...`;
+                
+                const uploadedUrl = await uploadToSupabase(file, (percent) => {
+                    submitBtn.innerText = `Đang tải ảnh ${i+1}/${files.length} (${percent}%)...`;
+                });
+                
+                // Nếu người dùng nhập tiêu đề, ưu tiên dùng. Nếu tải nhiều, lấy tên file làm tiêu đề
+                let label = inputLabel;
+                if (!label || files.length > 1) {
+                    label = file.name.replace(/\.[^/.]+$/, ""); // Xóa đuôi file
+                }
 
-        const data = await response.json();
-
-        if (data.success) {
-            cancelEdit('gallery');
-            loadGallery();
-            alert(id ? '✅ Cập nhật hình ảnh thành công!' : '✅ Thêm hình ảnh thành công!');
+                itemsToSave.push({ imageUrl: uploadedUrl, label, order: order + i });
+            }
         } else {
-            alert('❌ Lỗi: ' + (data.error || 'Không xác định'));
+            // Nếu dùng URL truyền thống
+            itemsToSave.push({ imageUrl: inputUrl, label: inputLabel, order });
         }
+
+        // Lưu vào CSDL
+        for (let i = 0; i < itemsToSave.length; i++) {
+            const item = itemsToSave[i];
+            submitBtn.innerText = `Đang lưu CSDL ${i+1}/${itemsToSave.length}...`;
+            
+            // Nếu là chế độ edit (có id), chỉ sửa item đầu tiên
+            const method = (id && i === 0) ? 'PUT' : 'POST';
+            const url = (id && i === 0) ? `${API_URL}/gallery/${id}` : `${API_URL}/gallery`;
+
+            const response = await authFetch(url, {
+                method: method,
+                body: JSON.stringify(item)
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Lỗi khi lưu ảnh vào CSDL');
+            }
+        }
+
+        cancelEdit('gallery');
+        loadGallery();
+        alert(id ? '✅ Cập nhật hình ảnh thành công!' : '✅ Thêm hình ảnh thành công!');
     } catch (error) {
         if (error.message === 'Token đã hết hạn') return;
         console.error('❌ Error saving gallery item:', error);
         alert('❌ Lỗi kết nối: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = id ? 'Lưu Thay Đổi' : 'Thêm Hình Ảnh';
     }
 });
 
@@ -389,7 +498,7 @@ function editGallery(id, imageUrl, label, order) {
 // =============================================================================
 // Audio Management (localStorage — giữ nguyên cơ chế, bọc error handling)
 // =============================================================================
-document.getElementById('audioForm')?.addEventListener('submit', (e) => {
+document.getElementById('audioForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     if (!token) {
@@ -399,16 +508,35 @@ document.getElementById('audioForm')?.addEventListener('submit', (e) => {
     }
 
     const id = document.getElementById('audioId')?.value;
-    const url = document.getElementById('audioUrl')?.value.trim();
+    const fileInput = document.getElementById('audioFile');
+    let url = document.getElementById('audioUrl')?.value.trim();
     const title = document.getElementById('audioTitle')?.value.trim();
     const description = document.getElementById('audioDescription')?.value.trim();
 
-    if (!url || !title) {
-        alert('Vui lòng điền đầy đủ thông tin.');
+    const file = fileInput ? fileInput.files[0] : null;
+
+    if (!url && !file) {
+        alert('Vui lòng chọn file âm thanh hoặc nhập URL.');
+        return;
+    }
+    
+    if (!title) {
+        alert('Vui lòng nhập tiêu đề.');
         return;
     }
 
+    const submitBtn = document.getElementById('audioSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Đang xử lý...';
+
     try {
+        if (file) {
+            submitBtn.innerText = 'Đang tải âm thanh (0%)...';
+            url = await uploadToSupabase(file, (percent) => {
+                submitBtn.innerText = `Đang tải âm thanh (${percent}%)...`;
+            });
+        }
+
         if (id) {
             // Update
             const index = audios.findIndex(a => a.id.toString() === id);
@@ -434,6 +562,9 @@ document.getElementById('audioForm')?.addEventListener('submit', (e) => {
     } catch (error) {
         console.error('❌ Error saving audio:', error);
         alert('❌ Lỗi lưu dữ liệu: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = id ? 'Lưu Thay Đổi' : 'Thêm Âm Thanh';
     }
 });
 

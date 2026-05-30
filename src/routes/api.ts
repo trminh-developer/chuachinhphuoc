@@ -99,6 +99,57 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 });
 
 // =============================================================================
+// File Upload (Supabase Storage)
+// =============================================================================
+router.post('/upload-token', authenticateAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+        const { filename } = req.body;
+        if (!filename) {
+            return sendResponse(res, 400, false, undefined, undefined, 'Thiếu tên file');
+        }
+
+        const SUPABASE_URL = process.env.POSTGRES_URL_SUPABASE_URL;
+        const SERVICE_KEY = process.env.POSTGRES_URL_SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!SUPABASE_URL || !SERVICE_KEY) {
+            return sendResponse(res, 500, false, undefined, undefined, 'Cấu hình Server thiếu thông tin Supabase Storage');
+        }
+
+        // Tạo tên file an toàn và duy nhất
+        const safeFilename = Date.now() + '-' + filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+
+        // Gọi Supabase API để lấy Signed Upload URL
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/upload/sign/uploads/${safeFilename}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${SERVICE_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Supabase API error: ${errorText}`);
+        }
+
+        const data = await response.json();
+        const signedUrl = `${SUPABASE_URL}/storage/v1${data.url}`;
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/uploads/${safeFilename}`;
+
+        return sendResponse(res, 200, true, { 
+            signedUrl,
+            token: data.token,
+            publicUrl,
+            path: safeFilename
+        }, 'Lấy token thành công');
+    } catch (error: any) {
+        console.error('❌ Upload token error:', error);
+        return sendResponse(res, 500, false, undefined, undefined, 'Lỗi khi tạo token upload: ' + error.message);
+    }
+});
+
+// =============================================================================
 // Events CRUD
 // =============================================================================
 router.get('/events', async (req: Request, res: Response) => {
