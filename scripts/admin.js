@@ -266,6 +266,13 @@ document.getElementById('eventForm')?.addEventListener('submit', async (e) => {
             imageUrl = await uploadToSupabase(fileInput.files[0], (percent) => {
                 submitBtn.innerText = `Đang tải ảnh lên (${percent}%)...`;
             });
+        } else if (imageUrl) {
+            if (imageUrl.toLowerCase().startsWith('c:\\') || imageUrl.toLowerCase().startsWith('file://') || imageUrl.toLowerCase().startsWith('d:\\') || !imageUrl.toLowerCase().startsWith('http')) {
+                alert('❌ Lỗi: Đường dẫn ảnh không hợp lệ (Không dùng đường dẫn máy tính cục bộ). Vui lòng Tải file lên hoặc nhập URL bắt đầu bằng http/https!');
+                submitBtn.disabled = false;
+                submitBtn.innerText = id ? 'Lưu Thay Đổi' : 'Thêm Hoạt Động';
+                return;
+            }
         }
 
         const method = id ? 'PUT' : 'POST';
@@ -426,6 +433,13 @@ document.getElementById('galleryForm')?.addEventListener('submit', async (e) => 
     if (files.length === 0 && !inputLabel) {
         alert('Vui lòng nhập tiêu đề ảnh.');
         return;
+    }
+
+    if (files.length === 0 && inputUrl) {
+        if (inputUrl.toLowerCase().startsWith('c:\\') || inputUrl.toLowerCase().startsWith('file://') || inputUrl.toLowerCase().startsWith('d:\\') || !inputUrl.toLowerCase().startsWith('http')) {
+            alert('❌ Lỗi: Đường dẫn ảnh không hợp lệ (Không dùng đường dẫn máy tính cục bộ). Vui lòng Tải file lên hoặc nhập URL bắt đầu bằng http/https!');
+            return;
+        }
     }
 
     const submitBtn = document.getElementById('gallerySubmitBtn');

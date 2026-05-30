@@ -194,6 +194,13 @@ router.post('/events', authenticateAdmin, async (req: AuthRequest, res: Response
             return sendResponse(res, 400, false, undefined, undefined, 'Định dạng ngày phải là DD/MM/YYYY (vd: 01/01/2026)');
         }
 
+        if (imageUrl) {
+            const urlLower = imageUrl.trim().toLowerCase();
+            if (urlLower.startsWith('c:\\') || urlLower.startsWith('file://') || urlLower.startsWith('d:\\') || (!urlLower.startsWith('http') && !urlLower.startsWith('/'))) {
+                return sendResponse(res, 400, false, undefined, undefined, 'URL ảnh không hợp lệ (Không dùng đường dẫn cục bộ)');
+            }
+        }
+
         const eventId = await addEvent(date.trim(), title.trim(), description.trim(), category.trim(), imageUrl?.trim());
         sendResponse(res, 201, true, { id: eventId }, 'Thêm hoạt động thành công');
     } catch (error: any) {
@@ -217,6 +224,13 @@ router.put('/events/:id', authenticateAdmin, async (req: AuthRequest, res: Respo
         const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
         if (!dateRegex.test(date.trim())) {
             return sendResponse(res, 400, false, undefined, undefined, 'Định dạng ngày phải là DD/MM/YYYY');
+        }
+
+        if (imageUrl) {
+            const urlLower = imageUrl.trim().toLowerCase();
+            if (urlLower.startsWith('c:\\') || urlLower.startsWith('file://') || urlLower.startsWith('d:\\') || (!urlLower.startsWith('http') && !urlLower.startsWith('/'))) {
+                return sendResponse(res, 400, false, undefined, undefined, 'URL ảnh không hợp lệ (Không dùng đường dẫn cục bộ)');
+            }
         }
 
         const updated = await updateEvent(id, date.trim(), title.trim(), description.trim(), category.trim(), imageUrl?.trim());
@@ -271,6 +285,11 @@ router.post('/gallery', authenticateAdmin, async (req: AuthRequest, res: Respons
             return sendResponse(res, 400, false, undefined, undefined, 'Thiếu imageUrl hoặc label');
         }
 
+        const urlLower = imageUrl.trim().toLowerCase();
+        if (urlLower.startsWith('c:\\') || urlLower.startsWith('file://') || urlLower.startsWith('d:\\') || (!urlLower.startsWith('http') && !urlLower.startsWith('/'))) {
+            return sendResponse(res, 400, false, undefined, undefined, 'URL ảnh không hợp lệ (Không dùng đường dẫn cục bộ)');
+        }
+
         const parsedOrder = typeof order === 'number' ? order : parseInt(order, 10) || 0;
         const itemId = await addGalleryItem(imageUrl.trim(), label.trim(), parsedOrder);
         sendResponse(res, 201, true, { id: itemId }, 'Thêm hình ảnh thành công');
@@ -290,6 +309,11 @@ router.put('/gallery/:id', authenticateAdmin, async (req: AuthRequest, res: Resp
         const { imageUrl, label, order } = req.body;
         if (!imageUrl || !label) {
             return sendResponse(res, 400, false, undefined, undefined, 'Thiếu imageUrl hoặc label');
+        }
+
+        const urlLower = imageUrl.trim().toLowerCase();
+        if (urlLower.startsWith('c:\\') || urlLower.startsWith('file://') || urlLower.startsWith('d:\\') || (!urlLower.startsWith('http') && !urlLower.startsWith('/'))) {
+            return sendResponse(res, 400, false, undefined, undefined, 'URL ảnh không hợp lệ (Không dùng đường dẫn cục bộ)');
         }
 
         const parsedOrder = typeof order === 'number' ? order : parseInt(order, 10) || 0;
