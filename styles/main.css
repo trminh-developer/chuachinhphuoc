@@ -78,7 +78,7 @@ body {
 
 .nav-menu {
     display: flex;
-    gap: 2rem;
+    gap: 1.25rem;
     align-items: center;
 }
 
@@ -87,6 +87,7 @@ body {
     text-decoration: none;
     font-weight: 500;
     font-size: 0.95rem;
+    white-space: nowrap;
     transition: var(--transition);
     position: relative;
 }
@@ -258,7 +259,7 @@ body {
     font-size: 0.95rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1050px) {
     .nav-search {
         margin: 1rem 0;
         width: 100%;
@@ -817,7 +818,7 @@ body {
 }
 
 /* ==================== Mobile Responsive ==================== */
-@media (max-width: 768px) {
+@media (max-width: 1050px) {
     /* Sửa lỗi ảnh nền bị phóng to/xám xịt trên iOS Safari */
     .hero-background {
         background-attachment: scroll;
